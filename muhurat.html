@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Shubh Muhurat & Tithi Calendar | SIAOS</title>
+  <meta name="description" content="Explore daily Shubh Muhurat timings by date and city, plus the SIAOS Vrat and Tithi calendar for 2026–2028.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="theme.css?v=20260826-7">
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html"><img src="assets/siaos-logo.webp" alt="SIAOS crest"><span>Sarkar Institute of Astrology and Occult Sciences</span></a>
+    <div class="links">
+      <a href="index.html#about">About</a>
+      <a href="muhurat.html" aria-current="page">Muhurat</a>
+      <a href="index.html#services">Services</a>
+      <a href="blogs.html">Blogs</a>
+      <a href="products.html">Products</a>
+      <a href="index.html#videos">Videos</a>
+      <a href="index.html#reviews">Reviews</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+    <button class="hamburger menu" aria-label="Open navigation"><span></span><span></span><span></span></button>
+  </nav>
+
+  <main class="muhurat-page-main">
+    <section id="muhurat" class="muhurat-section">
+      <div class="muhurat-intro">
+        <span class="kicker">Vedic Panchang · Surat Default</span>
+        <h2>Shubh Muhurat Explorer</h2>
+        <p>Select a date and city anywhere in the world to see the complete daytime and nighttime Choghadiya Muhurat schedule for that location.</p>
+        <p class="muhurat-location-note">Timings are location-specific. Surat is selected by default and results are shown in the selected city’s local time.</p>
+      </div>
+      <div class="muhurat-panel">
+        <form id="muhuratForm" class="muhurat-form">
+          <div class="muhurat-date-field">
+            <label for="muhuratDate">Date</label>
+            <input id="muhuratDate" type="date" min="2026-01-01" max="2026-12-31" required>
+          </div>
+          <div class="muhurat-city-field">
+            <label for="muhuratCity">City</label>
+            <span class="muhurat-city-search">
+              <input id="muhuratCity" type="search" value="Surat, Gujarat, India" placeholder="Start typing a city name" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="muhuratCitySuggestions" required>
+              <span id="muhuratCitySuggestions" class="muhurat-city-suggestions" role="listbox" hidden></span>
+            </span>
+            <small id="muhuratCityStatus" class="muhurat-city-status">Start typing at least 2 letters, then choose a suggested city.</small>
+          </div>
+          <button class="btn fill" type="submit">Show Muhurat Timings</button>
+        </form>
+
+        <div id="muhuratResult" class="muhurat-result" aria-live="polite">
+          <div class="muhurat-verdict">
+            <span id="muhuratBadge" class="muhurat-badge">Daily Choghadiya</span>
+            <h3 id="muhuratVerdict">Choose a date and location</h3>
+            <p id="muhuratMessage">The auspicious Muhurats will be highlighted in gold.</p>
+            <div class="muhurat-sun-times"><span>Sunrise <strong id="sunriseValue">—</strong></span><span>Sunset <strong id="sunsetValue">—</strong></span><span>Next sunrise <strong id="nextSunriseValue">—</strong></span></div>
+          </div>
+          <section class="choghadiya-section" aria-labelledby="dayMuhuratTitle"><div class="choghadiya-heading"><span class="kicker">Sunrise to sunset</span><h4 id="dayMuhuratTitle">Day Muhurats</h4></div><div id="dayMuhuratGrid" class="muhurat-windows choghadiya-grid"></div></section>
+          <section class="choghadiya-section" aria-labelledby="nightMuhuratTitle"><div class="choghadiya-heading"><span class="kicker">Sunset to next sunrise</span><h4 id="nightMuhuratTitle">Night Muhurats</h4></div><div id="nightMuhuratGrid" class="muhurat-windows choghadiya-grid"></div></section>
+          <p class="muhurat-source-note">Gold indicates Amrit, Shubh, Labh and Char Choghadiya. Kaal, Rog and Udveg remain unhighlighted. Timings are calculated from local sunrise and sunset using the traditional <a href="https://www.drikpanchang.com/muhurat/choghadiya.html" target="_blank" rel="noopener">Choghadiya method</a>. Location data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tithi-calendar" class="tithi-calendar-section">
+      <div class="tithi-calendar-intro">
+        <span class="kicker">SIAOS Vrat & Tithi Almanac · 2026–2028</span>
+        <h2>When the Moon<br><em>marks the moment</em></h2>
+        <p>Choose a year and sacred lunar observance to reveal every matching date in the SIAOS calendar.</p>
+        <div class="tithi-count-seal" aria-live="polite"><strong id="tithiCount">24</strong><span id="tithiCountLabel">Ekadashi dates</span><small>Surat · Smarta Panchang</small></div>
+      </div>
+      <div class="tithi-calendar-panel">
+        <form id="tithiFilterForm" class="tithi-filter-form">
+          <label>Choose Year
+            <select id="tithiYear"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option></select>
+          </label>
+          <label>Choose Vrat or Tithi
+            <select id="tithiType"><option value="Ekadashi">Ekadashi</option><option value="Pradosh">Pradosh</option><option value="Sankashti Chaturthi">Sankashti Chaturthi</option><option value="Purnima">Purnima</option><option value="Amavasya">Amavasya</option><option value="Masik Shivaratri">Masik Shivaratri</option><option value="Masik Durgashtami">Masik Durgashtami</option></select>
+          </label>
+          <label>Month
+            <select id="tithiMonth"><option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select>
+          </label>
+          <button class="btn fill" type="submit">Reveal the Dates</button>
+        </form>
+        <div class="tithi-results-head"><div><span class="kicker">Your filtered calendar</span><h3 id="tithiSummary">24 Ekadashi dates in 2026</h3></div><p>Dates shown for Surat, Gujarat (IST). Observance dates can vary by location and tradition.</p></div>
+        <div id="tithiResults" class="tithi-results" aria-live="polite"></div>
+        <p id="tithiEmpty" class="tithi-empty" hidden>No matching dates were found for this selection.</p>
+        <p class="tithi-tradition-note"><strong>Calendar convention:</strong> Smarta/standard Panchang primary observance dates. Separately named Purnima and Amavasya observances remain separate when the Panchang lists them separately. Vaishnava or ISKCON dates may differ.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>Sarkar Institute of Astrology and Occult Sciences · Surat, Gujarat</footer>
+  <script src="site.js?v=20260826-7"></script>
+  <script src="assets/js/astronomy.browser.min.js"></script>
+  <script src="muhurat.js?v=20260826-7"></script>
+  <script src="tithi-data.js"></script>
+  <script src="tithi-calendar.js?v=20260826-7"></script>
+</body>
+</html>
