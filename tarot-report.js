@@ -2,6 +2,10 @@
   const target = document.querySelector('#tarotReportContent');
   const bookingUrl = 'booking.html?service=tarot&subservice=Single%20Question%20Reading';
   const escapeHtml = value => String(value).replace(/[&<>'"]/g,character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[character]));
+  const suitSymbol = suit => ({Wands:'✦',Cups:'♢',Swords:'†',Pentacles:'⟡'}[suit] || '✦');
+  const cardVisual = card => card.image
+    ? `<img class="tarot-card-art" src="${escapeHtml(card.image)}" alt="Illustrated ${escapeHtml(card.name)} Tarot card">`
+    : `<div class="tarot-card-art tarot-card-art-fallback" role="img" aria-label="SIAOS ${escapeHtml(card.name)} Tarot card"><span>${escapeHtml(card.suit || 'Major Arcana')}</span><b>${suitSymbol(card.suit)}</b><strong>${escapeHtml(card.name)}</strong><i>${escapeHtml(card.number)}</i></div>`;
   let report = null;
   try { report = JSON.parse(sessionStorage.getItem('siaosTarotReport')) || JSON.parse(localStorage.getItem('siaosTarotDailyDrawV2')); } catch {}
 
@@ -15,7 +19,7 @@
     <div class="tarot-report-layout">
       <article class="tarot-card report-tarot-card">
         <small>${escapeHtml(card.number)}</small>
-        <img class="tarot-card-art" src="${escapeHtml(card.image || 'assets/tarot/the-hermit.png')}" alt="Illustrated ${escapeHtml(card.name)} Tarot card">
+        ${cardVisual(card)}
         <h3>${escapeHtml(card.name)}</h3>
         <span>${escapeHtml(card.keywords)}</span>
       </article>
