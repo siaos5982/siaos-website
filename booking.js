@@ -117,6 +117,19 @@ const subServiceWrap = document.querySelector('#subServiceWrap');
 const subService = document.querySelector('#subService');
 const formSection = document.querySelector('#formSection');
 const dynamicForm = document.querySelector('#dynamicForm');
+const bookingContent = document.querySelector('#bookingContent');
+const bookingAccessGate = document.querySelector('#bookingAccessGate');
+
+async function requireBookingAccount() {
+  const session = await window.SIAOSAccount?.getSession();
+  if (session) { bookingContent.hidden = false; return true; }
+  const next = `${location.pathname.split('/').pop() || 'booking.html'}${location.search}${location.hash}`;
+  bookingAccessGate.innerHTML = `<div class="account-prompt-backdrop"></div><section class="account-prompt-card" role="dialog" aria-modal="true" aria-labelledby="bookingAccessTitle"><img src="assets/siaos-official-logo.png" alt="Official SIAOS crest"><span class="kicker">Account required</span><h2 id="bookingAccessTitle">Sign in before<br><em>booking a consultation.</em></h2><p>Your booking details and purchased reports are kept private inside your SIAOS account.</p><div class="account-prompt-actions"><a class="btn fill" href="login.html?mode=signup&next=${encodeURIComponent(next)}">Create Account</a><a class="btn" href="login.html?mode=signin&next=${encodeURIComponent(next)}">Sign In</a></div></section>`;
+  bookingAccessGate.hidden = false;
+  document.body.classList.add('account-prompt-open');
+  bookingAccessGate.querySelector('.btn.fill')?.focus();
+  return false;
+}
 
 function fillLocation(input) {
   const match = cities.find(item => item.city.toLowerCase() === input.value.trim().toLowerCase());
@@ -227,3 +240,8 @@ if (services[requestedService]) {
     renderForm(requestedService);
   }
 }
+
+requireBookingAccount().catch(() => {
+  bookingAccessGate.hidden = false;
+  bookingAccessGate.innerHTML = `<div class="account-prompt-backdrop"></div><section class="account-prompt-card"><span class="kicker">Account required</span><h2>Sign in to book</h2><p>Please open your SIAOS account before booking a consultation.</p><div class="account-prompt-actions"><a class="btn fill" href="login.html?mode=signup&next=booking.html">Create Account</a><a class="btn" href="login.html?mode=signin&next=booking.html">Sign In</a></div></section>`;
+});

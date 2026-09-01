@@ -5,7 +5,7 @@
   const client = configured ? window.supabase.createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}) : null;
   const keys = {
     demoAccount:'siaosDemoAccountV1',demoReadings:'siaosDemoReadingsV1',demoReports:'siaosDemoReportsV1',
-    pendingPhone:'siaosPendingOtpPhone',backlog:'siaosReadingBacklogV1'
+    pendingPhone:'siaosPendingOtpPhone',pendingCountryCode:'siaosPendingOtpCountryCode',backlog:'siaosReadingBacklogV1'
   };
   const listeners = new Set();
 
@@ -32,6 +32,7 @@
     const fullPhone = normalisePhone(countryCode,phone);
     if (fullPhone.length < 8) throw new Error('Enter a valid phone number.');
     sessionStorage.setItem(keys.pendingPhone,fullPhone);
+    sessionStorage.setItem(keys.pendingCountryCode,String(countryCode || '').replace(/\D/g,''));
     if (client) {
       const {error} = await client.auth.signInWithOtp({phone:fullPhone,options:{shouldCreateUser:mode !== 'signin'}});
       if (error) throw error;
@@ -44,6 +45,7 @@
 
   async function verifyOtp({token,profile={}}) {
     const phone = sessionStorage.getItem(keys.pendingPhone);
+    const countryCode = sessionStorage.getItem(keys.pendingCountryCode);
     if (!phone) throw new Error('Request a new OTP first.');
     let session;
     if (client) {
@@ -56,6 +58,8 @@
           user_id:userId,
           full_name:String(profile.fullName || data.user.user_metadata?.full_name || '').trim(),
           email:String(profile.email || '').trim() || null,
+          phone:data.user?.phone || phone,
+          country_code:countryCode || null,
           marketing_opt_in:Boolean(profile.marketingOptIn),
           updated_at:new Date().toISOString()
         };
@@ -68,6 +72,7 @@
       const isSignIn = profile.mode === 'signin';
       const account = {
         id:existing?.id || makeId('demo-user'),phone,
+        countryCode:countryCode || existing?.countryCode || '',
         fullName:String(profile.fullName || existing?.fullName || 'SIAOS Member').trim(),
         email:String(profile.email || existing?.email || '').trim(),
         marketingOptIn:isSignIn ? Boolean(existing?.marketingOptIn) : Boolean(profile.marketingOptIn),createdAt:existing?.createdAt || new Date().toISOString()
@@ -76,6 +81,7 @@
       session = await getSession();
     }
     sessionStorage.removeItem(keys.pendingPhone);
+    sessionStorage.removeItem(keys.pendingCountryCode);
     await syncPendingReadings();
     notify(session);
     return session;
@@ -85,7 +91,7 @@
     const session = await getSession();
     if (!session) return null;
     if (!client) return demoAccount();
-    const {data,error} = await client.from('profiles').select('user_id,full_name,email,marketing_opt_in,created_at').eq('user_id',session.user.id).maybeSingle();
+    const {data,error} = await client.from('profiles').select('user_id,full_name,email,phone,country_code,marketing_opt_in,created_at').eq('user_id',session.user.id).maybeSingle();
     if (error) throw error;
     return data || {user_id:session.user.id,full_name:session.user.user_metadata?.full_name || '',email:session.user.email || '',phone:session.user.phone || ''};
   }

@@ -7,10 +7,15 @@ create table if not exists public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null default '',
   email text,
+  phone text,
+  country_code text,
   marketing_opt_in boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists phone text;
+alter table public.profiles add column if not exists country_code text;
 
 create table if not exists public.readings (
   id uuid primary key default gen_random_uuid(),
