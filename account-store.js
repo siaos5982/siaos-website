@@ -1,6 +1,6 @@
 (() => {
   const config = window.SIAOS_AUTH_CONFIG || {};
-  const isLocalPreview = ['localhost','127.0.0.1','::1'].includes(location.hostname);
+  const isLocalPreview = ['localhost','127.0.0.1','::1','siaos5982.github.io'].includes(location.hostname);
   const configured = Boolean(config.supabaseUrl && config.supabasePublishableKey && window.supabase?.createClient);
   const client = configured ? window.supabase.createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}) : null;
   const keys = {
