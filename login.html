@@ -3,573 +3,64 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-
   <title>Sign In or Create Account | SIAOS</title>
-
-  <meta
-    name="description"
-    content="Sign in securely to save SIAOS readings and access purchased reports for 15 days."
-  >
-
+  <meta name="description" content="Sign in securely to save SIAOS readings and access purchased reports for 15 days.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&family=Jost:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  >
-
-  <link rel="stylesheet" href="theme.css?v=20260901-1">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="theme.css?v=20260831-1">
 </head>
-
 <body class="auth-page">
-
-  <!-- Navigation -->
-  <nav class="nav">
-
-    <a class="brand" href="index.html">
-      <img src="assets/siaos-logo.webp" alt="SIAOS crest">
-      <span>Sarkar Institute of Astrology and Occult Sciences</span>
-    </a>
-
-    <a class="top-btn" href="index.html">
-      Back to Website
-    </a>
-
-  </nav>
-
-
+  <nav class="nav"><a class="brand" href="index.html"><img src="assets/siaos-logo.webp" alt="SIAOS crest"><span>Sarkar Institute of Astrology and Occult Sciences</span></a><a class="top-btn" href="index.html">Back to Website</a></nav>
   <main class="auth-main">
-
-    <!-- LEFT SIDE -->
     <section class="auth-story">
-
-      <span class="kicker">
-        Your private SIAOS space
-      </span>
-
-      <h1>
-        Guidance that stays<br>
-        <em>with you.</em>
-      </h1>
-
-      <p>
-        Keep your readings together, return to purchased reports during
-        their 15-day access period, and manage your consultation journey
-        from one private account.
-      </p>
-
-
+      <span class="kicker">Your private SIAOS space</span>
+      <h1>Guidance that stays<br><em>with you.</em></h1>
+      <p>Keep your readings together, return to purchased reports during their 15-day access period, and manage your consultation journey from one private account.</p>
       <div class="auth-benefits">
-
-        <article>
-          <span>01</span>
-
-          <div>
-            <h2>Reading history</h2>
-            <p>
-              Your Mulank compatibility and Tarot readings appear in one place.
-            </p>
-          </div>
-        </article>
-
-
-        <article>
-          <span>02</span>
-
-          <div>
-            <h2>Report access</h2>
-            <p>
-              Purchased reports remain available for 15 days after payment confirmation.
-            </p>
-          </div>
-        </article>
-
-
-        <article>
-          <span>03</span>
-
-          <div>
-            <h2>Phone-secured</h2>
-            <p>
-              Sign in with a one-time SMS code—no password to remember.
-            </p>
-          </div>
-        </article>
-
+        <article><span>01</span><div><h2>Reading history</h2><p>Your Mulank compatibility and Tarot readings appear in one place.</p></div></article>
+        <article><span>02</span><div><h2>Report access</h2><p>Purchased reports remain available for 15 days after payment confirmation.</p></div></article>
+        <article><span>03</span><div><h2>Phone-secured</h2><p>Sign in with a one-time SMS code—no password to remember.</p></div></article>
       </div>
-
     </section>
-
-
-
-    <!-- RIGHT SIDE LOGIN CARD -->
     <section class="auth-card" aria-labelledby="authTitle">
-
-      <img
-        class="auth-crest"
-        src="assets/siaos-official-logo.png"
-        alt="Official SIAOS crest"
-      >
-
-
-      <!-- ========================================
-           TEMPORARY TEST LOGIN
-           Only displayed with ?test=1
-           ======================================== -->
-
-      <div
-        id="testLoginSection"
-        class="auth-test-login"
-        hidden
-      >
-
-        <span class="kicker">
-          Development Access
-        </span>
-
-        <h2>
-          Test Account Login
-        </h2>
-
-        <p>
-          Temporary access for testing the SIAOS account area.
-        </p>
-
-
-        <form
-          id="testLoginForm"
-          class="auth-form"
-        >
-
-          <label>
-            Test ID
-
-            <input
-              id="testUser"
-              type="text"
-              autocomplete="username"
-              placeholder="Enter test ID"
-              required
-            >
-          </label>
-
-
-          <label>
-            Test Password
-
-            <input
-              id="testPassword"
-              type="password"
-              autocomplete="current-password"
-              placeholder="Enter test password"
-              required
-            >
-          </label>
-
-
-          <button
-            id="testLoginButton"
-            class="btn fill auth-submit"
-            type="submit"
-          >
-            Enter Test Account
-          </button>
-
+      <img class="auth-crest" src="assets/siaos-official-logo.png" alt="Official SIAOS crest">
+      <div class="auth-tabs" role="tablist" aria-label="Account access">
+        <button class="active" type="button" role="tab" data-auth-mode="signup" aria-selected="true">Create Account</button>
+        <button type="button" role="tab" data-auth-mode="signin" aria-selected="false">Sign In</button>
+      </div>
+      <div id="phoneStep">
+        <span class="kicker" id="authKicker">New member</span>
+        <h2 id="authTitle">Create your account</h2>
+        <p id="authIntro">Enter your details and we’ll send a secure one-time code to your phone.</p>
+        <form id="phoneAuthForm" class="auth-form">
+          <div id="signupFields" class="auth-signup-fields">
+            <label>Full name<input id="authFullName" type="text" autocomplete="name" maxlength="80" required></label>
+            <label>Email address <small>Optional</small><input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
+          </div>
+          <div class="auth-phone-row">
+            <label>Country code<select id="authCountryCode" aria-label="Country code">
+              <option value="91" selected>🇮🇳 +91 India</option><option value="1">🇺🇸 +1 USA / Canada</option><option value="44">🇬🇧 +44 United Kingdom</option><option value="971">🇦🇪 +971 UAE</option><option value="61">🇦🇺 +61 Australia</option><option value="65">🇸🇬 +65 Singapore</option><option value="64">🇳🇿 +64 New Zealand</option><option value="974">🇶🇦 +974 Qatar</option><option value="968">🇴🇲 +968 Oman</option><option value="973">🇧🇭 +973 Bahrain</option><option value="965">🇰🇼 +965 Kuwait</option><option value="966">🇸🇦 +966 Saudi Arabia</option><option value="49">🇩🇪 +49 Germany</option><option value="33">🇫🇷 +33 France</option><option value="39">🇮🇹 +39 Italy</option><option value="34">🇪🇸 +34 Spain</option><option value="27">🇿🇦 +27 South Africa</option><option value="60">🇲🇾 +60 Malaysia</option><option value="977">🇳🇵 +977 Nepal</option><option value="880">🇧🇩 +880 Bangladesh</option>
+            </select></label>
+            <label>Mobile number<input id="authPhone" type="tel" inputmode="numeric" autocomplete="tel-national" minlength="6" maxlength="15" placeholder="91735 69555" required></label>
+          </div>
+          <label id="marketingConsent" class="auth-check"><input id="authMarketing" type="checkbox"> <span>Email me occasional SIAOS announcements, new articles and event updates. <b>Optional</b></span></label>
+          <label id="termsConsent" class="auth-check required"><input id="authTerms" type="checkbox" required> <span>I agree to the account terms and understand that purchased digital reports remain accessible for 15 days.</span></label>
+          <button class="btn fill auth-submit" type="submit">Send OTP</button>
         </form>
-
-
-        <p
-          id="testLoginStatus"
-          class="auth-status"
-          role="status"
-          aria-live="polite"
-        ></p>
-
-
-        <small class="auth-security">
-          Development testing mode only.
-        </small>
-
       </div>
-
-
-
-      <!-- ========================================
-           NORMAL OTP LOGIN
-           ======================================== -->
-
-      <div id="normalAuthSection">
-
-        <div
-          class="auth-tabs"
-          role="tablist"
-          aria-label="Account access"
-        >
-
-          <button
-            class="active"
-            type="button"
-            role="tab"
-            data-auth-mode="signup"
-            aria-selected="true"
-          >
-            Create Account
-          </button>
-
-
-          <button
-            type="button"
-            role="tab"
-            data-auth-mode="signin"
-            aria-selected="false"
-          >
-            Sign In
-          </button>
-
-        </div>
-
-
-
-        <!-- PHONE STEP -->
-        <div id="phoneStep">
-
-          <span
-            class="kicker"
-            id="authKicker"
-          >
-            New member
-          </span>
-
-
-          <h2 id="authTitle">
-            Create your account
-          </h2>
-
-
-          <p id="authIntro">
-            Enter your details and we’ll send a secure one-time code to your phone.
-          </p>
-
-
-
-          <form
-            id="phoneAuthForm"
-            class="auth-form"
-          >
-
-
-            <!-- SIGNUP FIELDS -->
-            <div
-              id="signupFields"
-              class="auth-signup-fields"
-            >
-
-              <label>
-                Full name
-
-                <input
-                  id="authFullName"
-                  type="text"
-                  autocomplete="name"
-                  maxlength="80"
-                  required
-                >
-              </label>
-
-
-              <label>
-                Email address
-                <small>Optional</small>
-
-                <input
-                  id="authEmail"
-                  type="email"
-                  autocomplete="email"
-                  placeholder="name@example.com"
-                >
-              </label>
-
-            </div>
-
-
-
-            <!-- PHONE -->
-            <div class="auth-phone-row">
-
-              <label>
-                Country code
-
-                <select
-                  id="authCountryCode"
-                  aria-label="Country code"
-                >
-
-                  <option value="91" selected>
-                    🇮🇳 +91 India
-                  </option>
-
-                  <option value="1">
-                    🇺🇸 +1 USA / Canada
-                  </option>
-
-                  <option value="44">
-                    🇬🇧 +44 United Kingdom
-                  </option>
-
-                  <option value="971">
-                    🇦🇪 +971 UAE
-                  </option>
-
-                  <option value="61">
-                    🇦🇺 +61 Australia
-                  </option>
-
-                  <option value="65">
-                    🇸🇬 +65 Singapore
-                  </option>
-
-                  <option value="64">
-                    🇳🇿 +64 New Zealand
-                  </option>
-
-                  <option value="974">
-                    🇶🇦 +974 Qatar
-                  </option>
-
-                  <option value="968">
-                    🇴🇲 +968 Oman
-                  </option>
-
-                  <option value="973">
-                    🇧🇭 +973 Bahrain
-                  </option>
-
-                  <option value="965">
-                    🇰🇼 +965 Kuwait
-                  </option>
-
-                  <option value="966">
-                    🇸🇦 +966 Saudi Arabia
-                  </option>
-
-                  <option value="49">
-                    🇩🇪 +49 Germany
-                  </option>
-
-                  <option value="33">
-                    🇫🇷 +33 France
-                  </option>
-
-                  <option value="39">
-                    🇮🇹 +39 Italy
-                  </option>
-
-                  <option value="34">
-                    🇪🇸 +34 Spain
-                  </option>
-
-                  <option value="27">
-                    🇿🇦 +27 South Africa
-                  </option>
-
-                  <option value="60">
-                    🇲🇾 +60 Malaysia
-                  </option>
-
-                  <option value="977">
-                    🇳🇵 +977 Nepal
-                  </option>
-
-                  <option value="880">
-                    🇧🇩 +880 Bangladesh
-                  </option>
-
-                </select>
-              </label>
-
-
-
-              <label>
-                Mobile number
-
-                <input
-                  id="authPhone"
-                  type="tel"
-                  inputmode="numeric"
-                  autocomplete="tel-national"
-                  minlength="6"
-                  maxlength="15"
-                  placeholder="91735 69555"
-                  required
-                >
-              </label>
-
-            </div>
-
-
-
-            <!-- MARKETING -->
-            <label
-              id="marketingConsent"
-              class="auth-check"
-            >
-
-              <input
-                id="authMarketing"
-                type="checkbox"
-              >
-
-              <span>
-                Email me occasional SIAOS announcements,
-                new articles and event updates.
-                <b>Optional</b>
-              </span>
-
-            </label>
-
-
-
-            <!-- TERMS -->
-            <label
-              id="termsConsent"
-              class="auth-check required"
-            >
-
-              <input
-                id="authTerms"
-                type="checkbox"
-                required
-              >
-
-              <span>
-                I agree to the account terms and understand that purchased
-                digital reports remain accessible for 15 days.
-              </span>
-
-            </label>
-
-
-
-            <button
-              class="btn fill auth-submit"
-              type="submit"
-            >
-              Send OTP
-            </button>
-
-          </form>
-
-        </div>
-
-
-
-        <!-- OTP STEP -->
-        <div
-          id="otpStep"
-          class="auth-otp-step"
-          hidden
-        >
-
-          <span class="kicker">
-            Phone verification
-          </span>
-
-          <h2>
-            Enter the 6-digit code
-          </h2>
-
-          <p>
-            We sent an OTP to
-            <strong id="otpPhone"></strong>.
-          </p>
-
-
-
-          <form
-            id="otpForm"
-            class="auth-form"
-          >
-
-            <label>
-              One-time password
-
-              <input
-                id="authOtp"
-                class="otp-input"
-                type="text"
-                inputmode="numeric"
-                autocomplete="one-time-code"
-                pattern="[0-9]{6}"
-                maxlength="6"
-                placeholder="••••••"
-                required
-              >
-            </label>
-
-
-            <button
-              class="btn fill auth-submit"
-              type="submit"
-            >
-              Verify & Continue
-            </button>
-
-          </form>
-
-
-
-          <button
-            id="changePhone"
-            class="auth-text-button"
-            type="button"
-          >
-            Change phone number
-          </button>
-
-
-
-          <p
-            id="demoOtpHint"
-            class="demo-otp-hint"
-            hidden
-          >
-            Local preview code:
-            <strong>123456</strong>
-          </p>
-
-        </div>
-
-
-
-        <p
-          id="authStatus"
-          class="auth-status"
-          role="status"
-          aria-live="polite"
-        ></p>
-
-
-        <small class="auth-security">
-          Your OTP is used only to verify account access.
-          Never share it with anyone, including SIAOS staff.
-        </small>
-
+      <div id="otpStep" class="auth-otp-step" hidden>
+        <span class="kicker">Phone verification</span><h2>Enter the 6-digit code</h2>
+        <p>We sent an OTP to <strong id="otpPhone"></strong>.</p>
+        <form id="otpForm" class="auth-form"><label>One-time password<input id="authOtp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required></label><button class="btn fill auth-submit" type="submit">Verify & Continue</button></form>
+        <button id="changePhone" class="auth-text-button" type="button">Change phone number</button>
+        <p id="demoOtpHint" class="demo-otp-hint" hidden>Local preview code: <strong>123456</strong></p>
       </div>
-
+      <p id="authStatus" class="auth-status" role="status" aria-live="polite"></p>
+      <small class="auth-security">Your OTP is used only to verify account access. Never share it with anyone, including SIAOS staff.</small>
     </section>
-
   </main>
-
-
-
-  <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- SIAOS AUTH -->
-  <script src="auth-config.js?v=20260831-1"></script>
-  <script src="account-store.js?v=20260831-1"></script>
-  <script src="login.js?v=20260901-2"></script>
-
+  <script src="auth-config.js?v=20260831-1"></script><script src="account-store.js?v=20260831-1"></script><script src="login.js?v=20260901-3"></script>
 </body>
 </html>
