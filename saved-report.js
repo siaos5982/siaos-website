@@ -1,0 +1,7 @@
+(() => {
+  const target=document.querySelector('#savedReportContent');const id=new URLSearchParams(location.search).get('id');
+  const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const fail=message=>{target.innerHTML=`<section><div class="report-empty"><span class="kicker">Report unavailable</span><h2>${escapeHtml(message)}</h2><p>Purchased reports can be opened only by the purchasing account during the 15-day access period.</p><a class="btn fill" href="account.html">Return to My Account</a></div></section>`;};
+  async function load(){try{if(!id)throw new Error('No purchased report was selected.');const report=await window.SIAOSAccount.getReport(id);const payload=report.payload||{};const sections=Array.isArray(payload.sections)?payload.sections:[];target.innerHTML=`<section><div class="account-reading-heading"><span class="kicker">Purchased report</span><h2>${escapeHtml(payload.title||'Your personalised SIAOS report')}</h2>${payload.introduction?`<p>${escapeHtml(payload.introduction)}</p>`:''}</div><div class="purchased-report-sections">${sections.map(section=>`<article><span>${escapeHtml(section.label||'Guidance')}</span><h3>${escapeHtml(section.title||'')}</h3><p>${escapeHtml(section.copy||section.content||'')}</p></article>`).join('')}</div></section>`;}catch(error){fail(error.message||'This report could not be opened.');}}
+  load();
+})();

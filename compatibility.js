@@ -48,7 +48,7 @@
   const pairScore = (first,second) => compatibilityMatrix[first - 1][second - 1];
   const scoreLabel = score => score >= 85 ? 'Natural harmony' : score >= 72 ? 'Strong potential' : score >= 60 ? 'Growth relationship' : 'Conscious balance needed';
 
-  form.addEventListener('submit',event => {
+  form.addEventListener('submit',async event => {
     event.preventDefault();
     if (!form.reportValidity()) return;
 
@@ -87,6 +87,7 @@
 
     try {
       sessionStorage.setItem('siaosCompatibility',JSON.stringify(report));
+      await window.SIAOSAccount?.saveReading({readingType:'compatibility',title:'Mulank & Bhagyank Compatibility',summary:{score:report.score,yourMulank:report.yourMulank,partnerMulank:report.partnerMulank},payload:report,createdAt:report.createdAt});
       location.href = 'compatibility-report.html';
     } catch {
       alert('Your browser could not prepare the report. Please allow session storage and try again.');

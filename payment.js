@@ -20,9 +20,6 @@
 
   const renderCompatibilityReport = () => {
     const report = safeSessionJson('siaosCompatibility');
-    const whatsappText = encodeURIComponent(
-      `Namaste SIAOS, I would like to unlock my detailed Mulank & Bhagyank Compatibility Report for ₹99${report?.score ? ` (preview score: ${report.score}%)` : ''}. Please share the payment instructions.`
-    );
 
     document.title = '₹99 Compatibility Report | SIAOS';
     kicker.textContent = 'Private Report';
@@ -45,9 +42,9 @@
     checkoutTarget.innerHTML = `
       <span class="kicker">Report access</span>
       <div class="payment-price"><span>Complete report</span><strong>₹99</strong></div>
-      <p>The online payment gateway is being connected. For now, continue on WhatsApp to receive the official payment instructions. Your report will be released after payment is confirmed.</p>
+      <p>The secure online payment gateway is being connected. Once enabled, this report will be attached to your signed-in account and remain available there for 15 days after payment confirmation.</p>
       <div class="payment-action-row">
-        <a class="btn fill" href="https://wa.me/919173569555?text=${whatsappText}" target="_blank" rel="noopener">Continue on WhatsApp to Pay ₹99</a>
+        <button class="btn fill" type="button" disabled>Secure Checkout Coming Next</button>
         <a class="btn" href="index.html#compatibility">Return to Preview</a>
       </div>
       <small class="payment-security-note">No card or banking details are collected on this website.</small>`;
@@ -70,9 +67,27 @@
       <a class="btn" href="booking.html">Back to Booking</a>`;
   };
 
-  if (params.get('product') === 'compatibility-report') {
-    renderCompatibilityReport();
-  } else {
-    renderConsultation();
-  }
+  const requireAccount = async () => {
+    const session = await window.SIAOSAccount?.getSession();
+    if (session) return true;
+    document.title = 'Sign In Before Payment | SIAOS';
+    kicker.textContent = 'Private checkout';
+    title.textContent = 'Sign in before payment';
+    intro.textContent = 'Your purchase must be connected to your account so only you can reopen the report during its 15-day access period.';
+    summaryTarget.innerHTML = `<h2>Keep this purchase with your account</h2><p>Use your phone-secured SIAOS account before continuing. Your current reading will remain saved in this browser.</p>`;
+    const next = `${location.pathname.split('/').pop()}${location.search}`;
+    checkoutTarget.innerHTML = `<span class="kicker">Account required</span><h2>Continue securely</h2><p>After signing in, you will return directly to this payment page.</p><div class="payment-action-row"><a class="btn fill" href="login.html?mode=signin&next=${encodeURIComponent(next)}">Sign In</a><a class="btn" href="login.html?mode=signup&next=${encodeURIComponent(next)}">Create Account</a></div>`;
+    return false;
+  };
+
+  (async () => {
+    try {
+      if (!await requireAccount()) return;
+      await window.SIAOSAccount.captureExistingReadings();
+      if (params.get('product') === 'compatibility-report') renderCompatibilityReport();
+      else renderConsultation();
+    } catch (error) {
+      checkoutTarget.innerHTML = `<h2>Checkout could not be opened</h2><p>${escapeHtml(error.message || 'Please try again.')}</p>`;
+    }
+  })();
 })();

@@ -204,7 +204,7 @@
   }
 
   function renderWindows(target,windows,timeZone) {
-    target.innerHTML = windows.map(window => `<article class="choghadiya-card ${window.tone}"><span class="muhurat-quality">${escapeHtml(window.meaning)}</span><h5>${escapeHtml(window.name)} Muhurat</h5><strong>${formatTime(window.start,timeZone)} – ${formatTime(window.end,timeZone)}</strong></article>`).join('');
+    target.innerHTML = windows.map(window => `<article class="choghadiya-card ${window.tone}"><span class="muhurat-quality">${escapeHtml(window.meaning)}</span><h5><span>${escapeHtml(window.name)}</span><span>Muhurat</span></h5><strong>${formatTime(window.start,timeZone)} – ${formatTime(window.end,timeZone)}</strong></article>`).join('');
   }
 
   function showError() {

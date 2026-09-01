@@ -15,7 +15,7 @@
     <div class="tarot-report-layout">
       <article class="tarot-card report-tarot-card">
         <small>${escapeHtml(card.number)}</small>
-        <div class="tarot-card-sigil"><img src="assets/siaos-logo.webp" alt="SIAOS crest"></div>
+        <img class="tarot-card-art" src="${escapeHtml(card.image || 'assets/tarot/the-hermit.png')}" alt="Illustrated ${escapeHtml(card.name)} Tarot card">
         <h3>${escapeHtml(card.name)}</h3>
         <span>${escapeHtml(card.keywords)}</span>
       </article>

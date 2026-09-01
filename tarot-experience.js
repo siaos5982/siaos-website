@@ -34,6 +34,18 @@
     {number:'XXI',name:'The World',keywords:'Completion · Integration · Achievement',message:'A cycle is ready to be understood as a whole. Acknowledge what has been completed, gather the lesson, and prepare for the next chapter without rushing past closure.',benefit:'It benefits you by helping you recognise completion, celebrate genuine progress and enter the next phase with wisdom.'}
   ];
 
+  const cardArtwork = {
+    'The Fool':'assets/tarot/the-fool.png',
+    'The Magician':'assets/tarot/the-magician.png',
+    'The High Priestess':'assets/tarot/the-high-priestess.png',
+    'The Empress':'assets/tarot/the-empress.png',
+    'The Hermit':'assets/tarot/the-hermit.png',
+    'The Star':'assets/tarot/the-star.png'
+  };
+  const illustratedCards = cards
+    .filter(card => cardArtwork[card.name])
+    .map(card => ({...card,image:cardArtwork[card.name]}));
+
   const hashText = value => {
     let hash = 2166136261;
     for (let index = 0; index < value.length; index += 1) {
@@ -86,8 +98,8 @@
     }
 
     const question = questionInput.value.trim();
-    const cardIndex = hashText(`${deviceToken()}|${todayKey}|${normaliseQuestion(question)}`) % cards.length;
-    const selectedCard = cards[cardIndex];
+    const cardIndex = hashText(`${deviceToken()}|${todayKey}|${normaliseQuestion(question)}`) % illustratedCards.length;
+    const selectedCard = illustratedCards[cardIndex];
     const report = {
       dateKey:todayKey,
       questionHash:hashText(normaliseQuestion(question)),
@@ -103,11 +115,12 @@
     reading.hidden = true;
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    setTimeout(() => {
+    setTimeout(async () => {
       deck.classList.remove('shuffling');
       try {
         localStorage.setItem(storageKey,JSON.stringify(report));
         sessionStorage.setItem('siaosTarotReport',JSON.stringify(report));
+        await window.SIAOSAccount?.saveReading({readingType:'tarot',title:`Tarot · ${report.card.name}`,summary:{card:report.card.name,question:report.question},payload:report,createdAt:report.createdAt});
         location.href = 'tarot-report.html';
       } catch {
         drawButton.disabled = false;

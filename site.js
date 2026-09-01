@@ -6,6 +6,40 @@ document.querySelector('.dots>button')?.addEventListener('click',event => {
 });
 document.addEventListener('click',() => document.querySelector('.dots')?.classList.remove('open'));
 
+const counters = document.querySelectorAll('.count-up');
+if (counters.length) {
+  const animateCounter = element => {
+    if (element.dataset.animated === 'true') return;
+    element.dataset.animated = 'true';
+    const target = Number(element.dataset.count || 0);
+    const suffix = element.dataset.suffix || '';
+    const decimals = Number(element.dataset.decimals || 0);
+    const duration = target >= 1000 ? 1650 : 1150;
+    const startedAt = performance.now();
+    const formatter = new Intl.NumberFormat('en-IN');
+    const tick = now => {
+      const progress = Math.min((now - startedAt) / duration,1);
+      const eased = 1 - Math.pow(1 - progress,3);
+      const current = target * eased;
+      const formatted = decimals > 0 ? current.toFixed(decimals) : formatter.format(Math.round(current));
+      element.textContent = `${formatted}${suffix}`;
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const revealCounters = () => {
+    counters.forEach(counter => {
+      const rect = counter.getBoundingClientRect();
+      if (rect.top < innerHeight * .92 && rect.bottom > 0) animateCounter(counter);
+    });
+    if ([...counters].every(counter => counter.dataset.animated === 'true')) {
+      removeEventListener('scroll',revealCounters);
+    }
+  };
+  addEventListener('scroll',revealCounters,{passive:true});
+  revealCounters();
+}
+
 const zodiacProfiles = {
   Aries:{gift:'decisive action',lesson:'patience before commitment',practice:'begin important mornings with three quiet breaths before acting'},
   Taurus:{gift:'steady effort',lesson:'flexibility when plans change',practice:'restore order in one small part of your surroundings'},
@@ -119,3 +153,20 @@ document.querySelectorAll('.sign').forEach(button => button.addEventListener('cl
 
 refreshZodiacMonth();
 setInterval(refreshZodiacMonth,60 * 60 * 1000);
+
+/* Account shell: configuration, secure data layer and delayed sign-in prompt. */
+(() => {
+  const source = document.currentScript?.src || location.href;
+  const base = new URL('.',source);
+  const loadScript = src => new Promise((resolve,reject) => {
+    if ([...document.scripts].some(script => script.src === src)) { resolve(); return; }
+    const script = document.createElement('script'); script.src = src; script.onload = resolve; script.onerror = reject; document.head.append(script);
+  });
+  (async () => {
+    await loadScript(new URL('auth-config.js?v=20260831-1',base).href);
+    const config = window.SIAOS_AUTH_CONFIG || {};
+    if (config.supabaseUrl && config.supabasePublishableKey && !window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+    await loadScript(new URL('account-store.js?v=20260831-1',base).href);
+    await loadScript(new URL('auth-ui.js?v=20260831-1',base).href);
+  })().catch(() => {});
+})();

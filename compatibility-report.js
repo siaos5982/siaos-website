@@ -23,5 +23,5 @@
       <div class="blurred-report" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="unlock-overlay"><span class="lock-mark">◇</span><h3>Your personalised solution is ready</h3><p>Unlock the complete communication guidance, balance practices and personalised compatibility solution.</p><a class="btn fill" href="payment.html?product=compatibility-report">Unlock Full Report · ₹99</a></div>
     </div>
-    <p class="compatibility-disclaimer">This numerology score is a reflective guide, not a guarantee or verdict about a relationship. Real compatibility also depends on communication, consent, behaviour and shared values.</p>`;
+    `;
 })();
