@@ -1,28 +1,9 @@
-document.querySelectorAll('.product-thumbs button').forEach(button=>button.addEventListener('click',()=>{
-  const gallery=button.closest('.product-gallery');
-  gallery.querySelector('.product-main-image').src=button.querySelector('img').src;
-  gallery.querySelectorAll('.product-thumbs button').forEach(item=>item.classList.remove('active'));
-  button.classList.add('active');
-}));
-
-const productPrices={
-  'Clear Quartz Bracelet':'₹1,100',
-  'Green Aventurine Bracelet':'₹1,100',
-  'Lapis Lazuli Bracelet':'₹1,100',
-  'Moon Stone Bracelet':'₹1,100',
-  'Pyrite Bracelet':'₹1,100',
-  'Red Hakik Bracelet':'₹1,100',
-  'Red Jesper Bracelet':'₹1,100',
-  'Rose Quartz Bracelet':'₹1,100',
-  'Tiger Eye Bracelet':'₹1,100',
-  'Yellow Citrine Bracelet':'₹1,100',
-  'Raksha Nazar Kavach':'₹22,000',
-  'Sarkar Kajal':'₹5,100',
-  'Mohini Ittar':'₹2,500'
-};
-
-document.querySelectorAll('.catalogue-card').forEach(card=>{
-  const name=card.querySelector('h3').textContent.trim();
-  const price=productPrices[name];
-  if(price) card.querySelector('.price-on-request').textContent=price;
-});
+const grid=document.querySelector('#productGrid');
+if(grid){
+  grid.innerHTML=window.SIAOS_PRODUCTS.map(product=>`<article class="product catalogue-card">
+    <a class="product-card-image" href="product-detail.html?product=${encodeURIComponent(product.slug)}"><img src="assets/products/${product.slug}/${product.images[0]}" alt="${product.name}"></a>
+    <div class="product-meta"><span>${product.category}</span>${product.badge?`<b>${product.badge}</b>`:''}</div>
+    <h3>${product.name}</h3><div class="product-rating" aria-label="Rated ${product.rating} out of 5">★★★★★ <span>${product.rating} (${product.reviews})</span></div>
+    <p class="product-price">${product.price}</p><a class="btn fill buy" href="product-detail.html?product=${encodeURIComponent(product.slug)}">Buy Now</a>
+  </article>`).join('');
+}
