@@ -22,7 +22,7 @@
     if (client) {
       const {data,error} = await client.auth.getSession();
       if (error) throw error;
-      return data.session;
+      if (data.session) return data.session;
     }
     const account = demoAccount();
     return account ? {user:{id:account.id,phone:account.phone,email:account.email,user_metadata:{full_name:account.fullName}},demo:true} : null;
@@ -90,14 +90,14 @@
   async function getProfile() {
     const session = await getSession();
     if (!session) return null;
-    if (!client) return demoAccount();
+    if (!client || session.demo) return demoAccount();
     const {data,error} = await client.from('profiles').select('user_id,full_name,email,phone,country_code,marketing_opt_in,created_at').eq('user_id',session.user.id).maybeSingle();
     if (error) throw error;
     return data || {user_id:session.user.id,full_name:session.user.user_metadata?.full_name || '',email:session.user.email || '',phone:session.user.phone || ''};
   }
 
   async function developerLogin() {
-    if (configured) throw new Error('Developer preview login is disabled when live authentication is configured.');
+    if (!config.developerPreviewEnabled) throw new Error('Developer preview login is disabled.');
     const existing=demoAccount();
     const account={id:existing?.id||'siaos-developer-preview',phone:existing?.phone||'+910000000000',countryCode:'91',fullName:'SIAOS Developer',email:existing?.email||'',marketingOptIn:false,developerPreview:true,createdAt:existing?.createdAt||new Date().toISOString()};
     writeJson(localStorage,keys.demoAccount,account);
@@ -126,7 +126,7 @@
     if (!session) return;
     const backlog = readJson(localStorage,keys.backlog,[]);
     if (!backlog.length) return;
-    if (!client) {
+    if (!client || session.demo) {
       const current = readJson(localStorage,keys.demoReadings,[]);
       const known = new Set(current.map(item => item.fingerprint));
       backlog.forEach(item => { if (!known.has(item.fingerprint)) current.push({...item,userId:session.user.id}); });
@@ -148,7 +148,7 @@
     const session = await getSession();
     if (!session) return [];
     await syncPendingReadings();
-    if (!client) return readJson(localStorage,keys.demoReadings,[]).filter(item => item.userId === session.user.id).sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+    if (!client || session.demo) return readJson(localStorage,keys.demoReadings,[]).filter(item => item.userId === session.user.id).sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
     const {data,error} = await client.from('readings').select('id,reading_type,title,summary,created_at').order('created_at',{ascending:false});
     if (error) throw error;
     return (data || []).map(item => ({id:item.id,readingType:item.reading_type,title:item.title,summary:item.summary,createdAt:item.created_at}));
@@ -157,7 +157,7 @@
   async function getReading(id) {
     const session = await getSession();
     if (!session) throw new Error('Sign in to open this reading.');
-    if (!client) {
+    if (!client || session.demo) {
       const item = readJson(localStorage,keys.demoReadings,[]).find(reading => reading.id === id && reading.userId === session.user.id);
       if (!item) throw new Error('This reading could not be found.');
       return item;
@@ -171,7 +171,7 @@
   async function getReports() {
     const session = await getSession();
     if (!session) return [];
-    if (!client) return readJson(localStorage,keys.demoReports,[]).filter(item => item.userId === session.user.id).sort((a,b) => new Date(b.purchasedAt)-new Date(a.purchasedAt));
+    if (!client || session.demo) return readJson(localStorage,keys.demoReports,[]).filter(item => item.userId === session.user.id).sort((a,b) => new Date(b.purchasedAt)-new Date(a.purchasedAt));
     const {data,error} = await client.from('report_purchases').select('id,report_type,title,status,purchased_at,access_expires_at').order('purchased_at',{ascending:false});
     if (error) throw error;
     return (data || []).map(item => ({id:item.id,reportType:item.report_type,title:item.title,status:item.status,purchasedAt:item.purchased_at,accessExpiresAt:item.access_expires_at}));
@@ -180,7 +180,7 @@
   async function getReport(id) {
     const session = await getSession();
     if (!session) throw new Error('Sign in to open this report.');
-    if (!client) {
+    if (!client || session.demo) {
       const report = readJson(localStorage,keys.demoReports,[]).find(item => item.id === id && item.userId === session.user.id);
       if (!report || new Date(report.accessExpiresAt) <= new Date()) throw new Error('This report access period has ended.');
       return report;
@@ -194,7 +194,7 @@
   async function getOrders() {
     const session=await getSession();
     if(!session) return [];
-    if(!client) return readJson(localStorage,keys.demoOrders,[]).filter(item=>item.userId===session.user.id).sort((a,b)=>new Date(b.orderedAt)-new Date(a.orderedAt));
+    if(!client || session.demo) return readJson(localStorage,keys.demoOrders,[]).filter(item=>item.userId===session.user.id).sort((a,b)=>new Date(b.orderedAt)-new Date(a.orderedAt));
     const {data,error}=await client.from('product_orders').select('id,order_number,status,payment_status,currency,subtotal,shipping_amount,total,items,delivery_address,tracking_reference,ordered_at,updated_at').order('ordered_at',{ascending:false});
     if(error) throw error;
     return (data||[]).map(item=>({id:item.id,orderNumber:item.order_number,status:item.status,paymentStatus:item.payment_status,currency:item.currency,subtotal:item.subtotal,shippingAmount:item.shipping_amount,total:item.total,items:item.items,deliveryAddress:item.delivery_address,trackingReference:item.tracking_reference,orderedAt:item.ordered_at,updatedAt:item.updated_at}));
