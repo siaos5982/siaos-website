@@ -96,15 +96,8 @@
     {number:'King',name:'King of Pentacles',suit:'Pentacles',keywords:'Stability · Stewardship · Achievement',message:'Material success carries responsibility. Lead with patience, protect what has been built and use resources in ways that create security beyond personal gain.',benefit:'It helps you make mature financial or practical decisions and build prosperity through disciplined stewardship.'}
   );
 
-  const cardArtwork = {
-    'The Fool':'assets/tarot/the-fool.png',
-    'The Magician':'assets/tarot/the-magician.png',
-    'The High Priestess':'assets/tarot/the-high-priestess.png',
-    'The Empress':'assets/tarot/the-empress.png',
-    'The Hermit':'assets/tarot/the-hermit.png',
-    'The Star':'assets/tarot/the-star.png'
-  };
-  const availableCards = cards.map(card => ({...card,image:cardArtwork[card.name] || ''}));
+  const artworkSlug = name => name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const availableCards = cards.map(card => ({...card,image:`assets/tarot/${artworkSlug(card.name)}.png`}));
 
   const hashText = value => {
     let hash = 2166136261;
