@@ -30,6 +30,10 @@
   };
   tabs.forEach(tab => tab.addEventListener('click',() => setMode(tab.dataset.authMode)));
 
+  const developerAccess=document.querySelector('#developerAccess');
+  developerAccess.hidden=Boolean(account?.configured);
+  document.querySelector('#developerLogin').addEventListener('click',async()=>{const button=document.querySelector('#developerLogin');button.disabled=true;setStatus('Opening the developer preview…');try{await account.developerLogin();setStatus('Developer preview ready.','success');location.replace(safeNext());}catch(error){setStatus(error.message||'Developer preview could not be opened.','error');button.disabled=false;}});
+
   account?.getSession().then(session => { if (session) location.replace(safeNext()); });
 
   phoneForm.addEventListener('submit',async event => {

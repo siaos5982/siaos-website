@@ -96,6 +96,14 @@
     return data || {user_id:session.user.id,full_name:session.user.user_metadata?.full_name || '',email:session.user.email || '',phone:session.user.phone || ''};
   }
 
+  async function developerLogin() {
+    if (configured) throw new Error('Developer preview login is disabled when live authentication is configured.');
+    const existing=demoAccount();
+    const account={id:existing?.id||'siaos-developer-preview',phone:existing?.phone||'+910000000000',countryCode:'91',fullName:'SIAOS Developer',email:existing?.email||'',marketingOptIn:false,developerPreview:true,createdAt:existing?.createdAt||new Date().toISOString()};
+    writeJson(localStorage,keys.demoAccount,account);
+    const session=await getSession();await syncPendingReadings();notify(session);return session;
+  }
+
   function queueReading(reading) {
     const backlog = readJson(localStorage,keys.backlog,[]);
     const item = {...reading,id:reading.id || makeId('reading'),createdAt:reading.createdAt || new Date().toISOString()};
@@ -219,7 +227,7 @@
   if (client) client.auth.onAuthStateChange((_event,session) => notify(session));
 
   window.SIAOSAccount = {
-    configured,isLocalPreview,client,getSession,getProfile,sendOtp,verifyOtp,signOut,
+    configured,isLocalPreview,client,getSession,getProfile,developerLogin,sendOtp,verifyOtp,signOut,
     saveReading,getReadings,getReading,getReports,getReport,getOrders,captureExistingReadings,
     onAuthChange(listener){listeners.add(listener);return () => listeners.delete(listener);}
   };
