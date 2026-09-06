@@ -47,6 +47,24 @@ create table if not exists public.report_documents (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.product_orders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  order_number text not null unique,
+  payment_reference text unique,
+  payment_status text not null default 'pending' check (payment_status in ('pending','paid','failed','refunded','cancelled')),
+  status text not null default 'awaiting_payment' check (status in ('awaiting_payment','confirmed','processing','dispatched','delivered','cancelled','returned')),
+  currency text not null default 'INR',
+  subtotal numeric(12,2) not null default 0,
+  shipping_amount numeric(12,2) not null default 0,
+  total numeric(12,2) not null default 0,
+  items jsonb not null default '[]'::jsonb,
+  delivery_address jsonb not null default '{}'::jsonb,
+  tracking_reference text,
+  ordered_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create or replace function public.enforce_report_access_window()
 returns trigger language plpgsql security invoker set search_path = '' as $$
 begin
@@ -61,16 +79,19 @@ on public.report_purchases for each row execute function public.enforce_report_a
 
 create index if not exists readings_user_created_idx on public.readings(user_id,created_at desc);
 create index if not exists report_purchases_user_created_idx on public.report_purchases(user_id,purchased_at desc);
+create index if not exists product_orders_user_created_idx on public.product_orders(user_id,ordered_at desc);
 
 alter table public.profiles enable row level security;
 alter table public.readings enable row level security;
 alter table public.report_purchases enable row level security;
 alter table public.report_documents enable row level security;
+alter table public.product_orders enable row level security;
 
-revoke all on table public.profiles,public.readings,public.report_purchases,public.report_documents from anon,authenticated;
+revoke all on table public.profiles,public.readings,public.report_purchases,public.report_documents,public.product_orders from anon,authenticated;
 grant select,insert,update,delete on table public.profiles to authenticated;
 grant select,insert,delete on table public.readings to authenticated;
 grant select on table public.report_purchases,public.report_documents to authenticated;
+grant select on table public.product_orders to authenticated;
 
 create policy "profiles_select_own" on public.profiles for select to authenticated using ((select auth.uid()) = user_id);
 create policy "profiles_insert_own" on public.profiles for insert to authenticated with check ((select auth.uid()) = user_id);
@@ -92,5 +113,8 @@ create policy "active_report_document_select_own" on public.report_documents for
   )
 );
 
--- Payment webhooks use the server-only service role to insert a purchase and document.
+create policy "product_orders_select_own" on public.product_orders for select to authenticated using ((select auth.uid()) = user_id);
+
+-- Payment webhooks use the server-only service role to insert reports and product orders,
+-- and to update payment, fulfilment and tracking statuses.
 -- Never put the service-role key in browser JavaScript or GitHub.

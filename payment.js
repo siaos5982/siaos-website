@@ -67,14 +67,24 @@
       <a class="btn" href="booking.html">Back to Booking</a>`;
   };
 
+  const renderProductOrder=()=>{
+    let order;
+    try{order=JSON.parse(localStorage.getItem('siaosPendingProduct'));}catch{order=null;}
+    document.title='Product Checkout | SIAOS';kicker.textContent='SIAOS Store';title.textContent='Complete your product order';intro.textContent='Your order will be securely attached to your signed-in SIAOS account after payment confirmation.';backTop.href='products.html';backTop.textContent='Back to Store';
+    if(!order){summaryTarget.innerHTML=`<h2>No product selected</h2><p>Please return to the store and select a product first.</p><a class="btn fill" href="products.html">Explore Products</a>`;checkoutTarget.innerHTML='';return;}
+    summaryTarget.innerHTML=`<span class="kicker">Your order</span><h2>${escapeHtml(order.name)}</h2><div class="payment-order-grid"><div><strong>${escapeHtml(order.size||'Standard')}</strong><span>Selected size</span></div><div><strong>${escapeHtml(order.quantity||1)}</strong><span>Quantity</span></div><div><strong>${escapeHtml(order.price||'Price shown in store')}</strong><span>Item total</span></div></div>`;
+    checkoutTarget.innerHTML=`<span class="kicker">Account-linked purchase</span><h2>Secure product checkout</h2><p>When the payment gateway is activated, successful payment will create an order in My Account with the product, size, quantity, paid amount, delivery status and tracking reference.</p><div class="payment-action-row"><button class="btn fill" type="button" disabled>Secure Checkout Coming Next</button><a class="btn" href="product-detail.html?product=${encodeURIComponent(order.slug)}">Return to Product</a></div><small class="payment-security-note">An unpaid checkout attempt will not be recorded as a completed purchase.</small>`;
+  };
+
   const requireAccount = async () => {
     const session = await window.SIAOSAccount?.getSession();
     if (session) return true;
     document.title = 'Sign In Before Payment | SIAOS';
     kicker.textContent = 'Private checkout';
     title.textContent = 'Sign in before payment';
-    intro.textContent = 'Your purchase must be connected to your account so only you can reopen the report during its 15-day access period.';
-    summaryTarget.innerHTML = `<h2>Keep this purchase with your account</h2><p>Use your phone-secured SIAOS account before continuing. Your current reading will remain saved in this browser.</p>`;
+    const isProduct=params.has('product')&&params.get('product')!=='compatibility-report';
+    intro.textContent=isProduct?'Sign in so this product purchase, payment status and delivery updates remain connected to your account.':'Your purchase must be connected to your account so only you can reopen the report during its 15-day access period.';
+    summaryTarget.innerHTML=`<h2>Keep this purchase with your account</h2><p>${isProduct?'Your selected product will remain saved in this browser while you sign in.':'Your current reading will remain saved in this browser.'}</p>`;
     const next = `${location.pathname.split('/').pop()}${location.search}`;
     checkoutTarget.innerHTML = `<span class="kicker">Account required</span><h2>Continue securely</h2><p>After signing in, you will return directly to this payment page.</p><div class="payment-action-row"><a class="btn fill" href="login.html?mode=signin&next=${encodeURIComponent(next)}">Sign In</a><a class="btn" href="login.html?mode=signup&next=${encodeURIComponent(next)}">Create Account</a></div>`;
     return false;
@@ -84,7 +94,8 @@
     try {
       if (!await requireAccount()) return;
       await window.SIAOSAccount.captureExistingReadings();
-      if (params.get('product') === 'compatibility-report') renderCompatibilityReport();
+      if(params.get('product')==='compatibility-report') renderCompatibilityReport();
+      else if(params.has('product')) renderProductOrder();
       else renderConsultation();
     } catch (error) {
       checkoutTarget.innerHTML = `<h2>Checkout could not be opened</h2><p>${escapeHtml(error.message || 'Please try again.')}</p>`;

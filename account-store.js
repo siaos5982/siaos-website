@@ -4,7 +4,7 @@
   const configured = Boolean(config.supabaseUrl && config.supabasePublishableKey && window.supabase?.createClient);
   const client = configured ? window.supabase.createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}) : null;
   const keys = {
-    demoAccount:'siaosDemoAccountV1',demoReadings:'siaosDemoReadingsV1',demoReports:'siaosDemoReportsV1',
+    demoAccount:'siaosDemoAccountV1',demoReadings:'siaosDemoReadingsV1',demoReports:'siaosDemoReportsV1',demoOrders:'siaosDemoOrdersV1',
     pendingPhone:'siaosPendingOtpPhone',pendingCountryCode:'siaosPendingOtpCountryCode',backlog:'siaosReadingBacklogV1'
   };
   const listeners = new Set();
@@ -183,6 +183,15 @@
     return {id:data.report_id,payload:data.payload};
   }
 
+  async function getOrders() {
+    const session=await getSession();
+    if(!session) return [];
+    if(!client) return readJson(localStorage,keys.demoOrders,[]).filter(item=>item.userId===session.user.id).sort((a,b)=>new Date(b.orderedAt)-new Date(a.orderedAt));
+    const {data,error}=await client.from('product_orders').select('id,order_number,status,payment_status,currency,subtotal,shipping_amount,total,items,delivery_address,tracking_reference,ordered_at,updated_at').order('ordered_at',{ascending:false});
+    if(error) throw error;
+    return (data||[]).map(item=>({id:item.id,orderNumber:item.order_number,status:item.status,paymentStatus:item.payment_status,currency:item.currency,subtotal:item.subtotal,shippingAmount:item.shipping_amount,total:item.total,items:item.items,deliveryAddress:item.delivery_address,trackingReference:item.tracking_reference,orderedAt:item.ordered_at,updatedAt:item.updated_at}));
+  }
+
   async function signOut() {
     if (client) {
       const {error} = await client.auth.signOut();
@@ -211,7 +220,7 @@
 
   window.SIAOSAccount = {
     configured,isLocalPreview,client,getSession,getProfile,sendOtp,verifyOtp,signOut,
-    saveReading,getReadings,getReading,getReports,getReport,captureExistingReadings,
+    saveReading,getReadings,getReading,getReports,getReport,getOrders,captureExistingReadings,
     onAuthChange(listener){listeners.add(listener);return () => listeners.delete(listener);}
   };
 })();
