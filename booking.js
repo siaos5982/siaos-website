@@ -31,6 +31,8 @@ cityList.innerHTML = cities.map(({city,state,country}) => `<option value="${city
 const hours = Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')).map(v=>`<option>${v}</option>`).join('');
 const minutes = Array.from({length:60},(_,i)=>String(i).padStart(2,'0')).map(v=>`<option>${v}</option>`).join('');
 const today = new Date().toISOString().split('T')[0];
+const bookingLimitDate=new Date();bookingLimitDate.setDate(bookingLimitDate.getDate()+31);
+const bookingMax=`${bookingLimitDate.getFullYear()}-${String(bookingLimitDate.getMonth()+1).padStart(2,'0')}-${String(bookingLimitDate.getDate()).padStart(2,'0')}`;
 
 function locationFields(prefix, legend) {
   return `<fieldset class="location-fields full"><legend>${legend}</legend>
@@ -48,10 +50,25 @@ function consultationMode() {
 }
 
 function consent() {
-  return `<div class="consent full">
+  return `<fieldset class="appointment-picker full"><legend>Select appointment *</legend><label>Appointment date<input id="appointmentDate" name="appointmentDate" type="date" min="${today}" max="${bookingMax}" required></label><div><span class="appointment-slot-label">Available timings</span><div id="appointmentSlots" class="appointment-slots"><p>Select a date to view available appointments.</p></div><small id="appointmentStatus" class="appointment-status">Monday–Saturday · Appointments can be booked up to one month ahead.</small></div></fieldset><div class="consent full">
     <label><input type="checkbox" name="disclaimerAccepted" required><span>I confirm that the information I have provided is accurate. I understand that SIAOS does not guarantee that any consultation, guidance or astrological remedy will produce 100% results. SIAOS recommends the astrological remedy considered most suitable for my circumstances, with the intention of providing guidance and possible relief; individual results may vary. These services do not replace medical, legal, financial or other licensed professional advice. I consent to SIAOS using my details only to arrange and provide my requested consultation.</span></label>
   </div>
   <button class="btn fill full payment-next" type="submit" disabled>Proceed to Payment</button>`;
+}
+
+const slotLabel=hour=>{const start=hour===12?'12:00 PM':hour>12?`${hour-12}:00 PM`:`${hour}:00 AM`;const endHour=hour===12?'12:30 PM':hour>12?`${hour-12}:30 PM`:`${hour}:30 AM`;return `${start} – ${endHour}`;};
+function previewSlots(date){return Array.from({length:9},(_,index)=>{const hour=10+index;return {start_at:`${date}T${String(hour).padStart(2,'0')}:00:00+05:30`,label:slotLabel(hour)}});}
+async function initialiseAppointmentPicker(form){
+  const dateInput=form.querySelector('#appointmentDate');const slotsTarget=form.querySelector('#appointmentSlots');const statusTarget=form.querySelector('#appointmentStatus');
+  dateInput.addEventListener('change',async()=>{
+    slotsTarget.innerHTML='<p>Checking availability…</p>';const chosen=new Date(`${dateInput.value}T12:00:00`);
+    if(!dateInput.value||chosen.getDay()===0){slotsTarget.innerHTML='<p>Appointments are unavailable on Sundays. Please select Monday–Saturday.</p>';return;}
+    let slots=[];let preview=false;
+    try{const session=await window.SIAOSAccount?.getSession();if(!window.SIAOSAccount?.client||session?.demo){slots=previewSlots(dateInput.value);preview=true;}else{const {data,error}=await window.SIAOSAccount.client.rpc('available_appointment_slots',{p_date:dateInput.value});if(error)throw error;slots=data||[];}}
+    catch(error){slotsTarget.innerHTML=`<p>${error.message||'Availability could not be loaded.'}</p>`;return;}
+    slotsTarget.innerHTML=slots.length?slots.map((slot,index)=>`<label class="appointment-slot"><input type="radio" name="appointmentStart" value="${slot.start_at}" ${index===0?'required':''}><span>${slot.label}</span></label>`).join(''):'<p>No appointments remain for this date. Please choose another date.</p>';
+    statusTarget.textContent=preview?'Developer preview availability · the selected time will be saved in this browser.':'Live availability · your selection is held for 15 minutes when you continue.';
+  });
 }
 
 function kundliForm() {
@@ -148,6 +165,7 @@ function renderForm(service) {
   const form = document.querySelector('#serviceForm');
   const consentBox = form.querySelector('[name="disclaimerAccepted"]');
   const proceed = form.querySelector('.payment-next');
+  initialiseAppointmentPicker(form);
   consentBox.addEventListener('change', () => proceed.disabled = !consentBox.checked);
   form.querySelectorAll('[data-city]').forEach(input => {
     input.addEventListener('input', () => fillLocation(input));
@@ -173,11 +191,15 @@ function renderForm(service) {
     event.preventDefault();
     if (!form.reportValidity() || !consentBox.checked) return;
     const details = Object.fromEntries(new FormData(form).entries());
-    const booking = {service,serviceName:services[service],relatedService:selectedRelatedService,details,createdAt:new Date().toISOString()};
+    const session=await window.SIAOSAccount?.getSession();
+    let appointmentId=`preview-${Date.now()}`;
+    if(window.SIAOSAccount?.client&&!session?.demo){const {data,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});if(error){alert(error.message||'This appointment is no longer available. Please select another time.');return;}appointmentId=data;}
+    const booking = {service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
     sessionStorage.setItem('siaosBooking', JSON.stringify(booking));
 
-    if (!GOOGLE_SHEETS_WEB_APP_URL) {
-      alert('Google Sheets collection is not configured yet. Add the deployed Apps Script URL in booking.js.');
+    const backendUrl = String(window.SIAOS_AUTH_CONFIG?.backendUrl || '').replace(/\/$/,'');
+    if (!backendUrl && !GOOGLE_SHEETS_WEB_APP_URL && !window.SIAOSAccount?.client && !session?.demo) {
+      alert('The secure booking service is not configured yet.');
       return;
     }
 
@@ -186,12 +208,19 @@ function renderForm(service) {
     proceed.textContent = 'Saving your details…';
 
     try {
-      await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {'Content-Type': 'text/plain;charset=utf-8'},
-        body: JSON.stringify(booking)
-      });
+      if (backendUrl) {
+        const response = await fetch(`${backendUrl}/api/consultations`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json','Authorization':`Bearer ${session?.access_token || ''}`},
+          body: JSON.stringify(booking)
+        });
+        if (!response.ok) throw new Error((await response.json().catch(()=>({}))).error || 'The booking could not be saved.');
+      } else if (GOOGLE_SHEETS_WEB_APP_URL) {
+        await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+          method: 'POST', mode: 'no-cors',
+          headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(booking)
+        });
+      }
       location.href = 'payment.html';
     } catch (error) {
       console.error('Google Sheets submission failed:', error);
