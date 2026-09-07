@@ -159,7 +159,8 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
   const source = document.currentScript?.src || location.href;
   const base = new URL('.',source);
   const loadScript = src => new Promise((resolve,reject) => {
-    if ([...document.scripts].some(script => script.src === src)) { resolve(); return; }
+    const requestedPath = new URL(src,location.href).pathname;
+    if ([...document.scripts].some(script => script.src && new URL(script.src,location.href).pathname === requestedPath)) { resolve(); return; }
     const script = document.createElement('script'); script.src = src; script.onload = resolve; script.onerror = reject; document.head.append(script);
   });
   (async () => {
@@ -169,4 +170,32 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
     await loadScript(new URL('account-store.js?v=20260831-1',base).href);
     await loadScript(new URL('auth-ui.js?v=20260831-1',base).href);
   })().catch(() => {});
+})();
+
+/* Customer-service and policy links required for a transparent checkout. */
+(() => {
+  const footer=document.querySelector('body>footer');
+  if(!footer || footer.querySelector('.policy-footer')) return;
+  const links=document.createElement('div');
+  links.className='policy-footer';
+  links.style.cssText='display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;margin-bottom:14px';
+  links.innerHTML='<a href="contact.html">Contact</a><a href="privacy-policy.html">Privacy</a><a href="terms.html">Terms</a><a href="shipping-policy.html">Shipping</a><a href="cancellation-policy.html">Cancellation</a><a href="refund-policy.html">Refunds</a>';
+  links.querySelectorAll('a').forEach(link=>{link.style.color='var(--gold,#caa43b)';link.style.textDecoration='underline';link.style.textUnderlineOffset='3px';});
+  footer.prepend(links);
+})();
+
+/* Consent-aware traffic reporting and cached live YouTube content. */
+(() => {
+  const source = document.currentScript?.src || location.href;
+  const base = new URL('.',source);
+  const load = name => new Promise((resolve,reject) => {
+    if ([...document.scripts].some(script => script.src.includes(`/${name}`))) { resolve(); return; }
+    const script = document.createElement('script');script.src=new URL(`${name}?v=20260906-1`,base).href;script.onload=resolve;script.onerror=reject;document.head.append(script);
+  });
+  (async()=>{
+    if(!window.SIAOS_AUTH_CONFIG)await load('auth-config.js');
+    if(!window.SIAOS_AUTH_CONFIG?.backendUrl) return;
+    await load('analytics.js');
+    if(document.querySelector('#videos'))await load('youtube-live.js');
+  })().catch(()=>{});
 })();
