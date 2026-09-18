@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {consultationInput,checkoutInput,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
+import {consultationInput,checkoutInput,cancellationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
 import {sheetRows} from '../backend/sheets.mjs';
 import worker from '../backend/worker.mjs';
 
@@ -18,9 +18,13 @@ test('consultations reject impossible calendar dates',()=>assert.throws(()=>cons
 test('checkout strips browser amounts and other unexpected values',()=>{const value=checkoutInput({...order,amount:1,paid:true});assert.equal(value.amount,undefined);assert.equal(value.paid,undefined);});
 test('checkout requires consent',()=>assert.throws(()=>checkoutInput({...order,consentAccepted:false})));
 test('checkout rejects fractional and excessive quantities',()=>{for(const quantity of [0,-1,1.5,11,'1'])assert.throws(()=>checkoutInput({...order,quantity}));});
-test('paid report checkout is blocked until fulfilment exists',()=>assert.throws(()=>checkoutInput({...order,kind:'report'})));
+test('paid report checkout accepts only the fixed report and four reduced numbers',()=>{const value=checkoutInput({...order,kind:'report',slug:'compatibility-report',variant:'15-day-access',quantity:1,reportNumbers:{yourMulank:1,yourBhagyank:2,partnerMulank:3,partnerBhagyank:4}});assert.equal(value.reportNumbers.partnerBhagyank,4);assert.throws(()=>checkoutInput({...order,kind:'report',slug:'compatibility-report',variant:'15-day-access',reportNumbers:{yourMulank:10}}));});
+test('paid compatibility report is generated server-side from reduced numbers',()=>{const value=compatibilityPaidReport({yourMulank:1,yourBhagyank:2,partnerMulank:3,partnerBhagyank:4});assert.equal(value.sections.length,8);assert.match(value.introduction,/% compatibility pattern/);assert.equal(value.numbers.partnerMulank,3);});
 test('product checkout requires a real address',()=>assert.throws(()=>checkoutInput({...order,address:{}})));
 test('consultation requires saved request ID and single quantity',()=>{assert.throws(()=>checkoutInput({...order,kind:'consultation',quantity:2}));assert.equal(checkoutInput({...order,kind:'consultation',consultationId:id}).consultationId,id);});
+test('cancellation accepts only a UUID and a bounded reason',()=>{assert.deepEqual(cancellationInput({appointmentId:id,reason:'  Schedule changed  '}),{appointmentId:id,reason:'Schedule changed'});assert.throws(()=>cancellationInput({appointmentId:'fake'}));assert.throws(()=>cancellationInput({appointmentId:id,reason:'x'.repeat(501)}));});
+test('catalogue prices use integer paise and exact variants',()=>{assert.equal(catalogInput({kind:'consultation',slug:'tarot',variant:'Single Question Reading',name:'Tarot',unitAmount:110000,shippingAmount:0,active:true}).unit_amount,110000);assert.throws(()=>catalogInput({kind:'product',slug:'test',variant:'',name:'Test',unitAmount:1.5,shippingAmount:0,active:true}));});
+test('operator refunds require a transaction, integer paise and a clear reason',()=>{assert.equal(operatorRefundInput({transactionId:id,amount:5000,reason:'Duplicate payment'}).amount,5000);assert.throws(()=>operatorRefundInput({transactionId:id,amount:1.5,reason:'Duplicate payment'}));assert.throws(()=>operatorRefundInput({transactionId:id,amount:5000,reason:'bad'}));});
 test('canonical comparison ignores JSON property order recursively',()=>assert.equal(canonical({b:2,a:{z:1,y:2}}),canonical({a:{y:2,z:1},b:2})));
 test('HMAC SHA256 matches a known test vector',async()=>{const s=await hmac('key','The quick brown fox jumps over the lazy dog');assert.equal(s,'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8');assert.ok(equalSignature(s,s));assert.equal(equalSignature(s,'x'.repeat(64)),false);assert.equal(equalSignature(s,s.slice(1)),false);});
 test('analytics strips query strings and full referrer details',()=>{const e=analyticsInput({consent:true,event_name:'page_view',session_id:id,anonymous_id:id,path:'/index.html',referrer:'https://example.org/path?email=private@example.org',metadata:{email:'private'},device:'mobile'});assert.equal(e.referrer,'example.org');assert.equal(e.metadata.email,undefined);});
@@ -64,8 +68,62 @@ test('checkout uses database price, not browser amount, and creates a ledger',as
     assert.equal(result.status,200);assert.equal((await result.json()).amount,110000);assert.ok(calls.some(c=>c.url.endsWith('/payment_transactions')));
   }finally{globalThis.fetch=original;}
 });
+test('report checkout stores a server-generated protected document payload',async()=>{
+  const original=globalThis.fetch,calls=[];
+  globalThis.fetch=async(url,options={})=>{
+    calls.push({url:String(url),options});let data;
+    if(String(url).endsWith('/auth/v1/user'))data={id};
+    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
+    else if(String(url).includes('/checkout_intents?'))data=options.method==='PATCH'?[{}]:[];
+    else if(String(url).includes('/catalog_prices?'))data=[{name:'Complete report',unit_amount:9900,shipping_amount:0}];
+    else if(String(url).endsWith('/checkout_intents'))data=[{}];
+    else if(String(url)==='https://api.razorpay.com/v1/orders')data={id:'order_report',amount:9900,currency:'INR'};
+    else if(String(url).endsWith('/payment_transactions'))data=[{id}];
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});
+  };
+  try{
+    const reportOrder={requestId:id,kind:'report',slug:'compatibility-report',variant:'15-day-access',quantity:1,consentAccepted:true,reportNumbers:{yourMulank:1,yourBhagyank:2,partnerMulank:3,partnerBhagyank:4},reportPayload:{title:'forged'}};
+    const response=await worker.fetch(new Request('https://api.test/api/payments/create',{method:'POST',headers:{Authorization:'Bearer test'},body:JSON.stringify(reportOrder)}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',PAYMENTS_ENABLED:'true',RAZORPAY_KEY_ID:'key',RAZORPAY_KEY_SECRET:'secret'});
+    assert.equal(response.status,200);const ledger=calls.find(call=>call.url.endsWith('/payment_transactions'));const payload=JSON.parse(ledger.options.body).metadata.reportPayload;assert.notEqual(payload.title,'forged');assert.equal(payload.sections.length,8);
+  }finally{globalThis.fetch=original;}
+});
 test('duplicate completed webhook does not fulfil twice',async()=>{
   const original=globalThis.fetch,body=JSON.stringify({event:'payment.captured'});let requests=0;
   globalThis.fetch=async()=>{requests++;return new Response(JSON.stringify([{processed_at:'2026-09-17T00:00:00Z'}]));};
   try{const result=await worker.fetch(new Request('https://api.test/api/webhooks/razorpay',{method:'POST',body,headers:{'x-razorpay-signature':await hmac('test',body),'x-razorpay-event-id':'event_test'}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',RAZORPAY_WEBHOOK_SECRET:'test'});assert.equal(result.status,200);assert.equal(requests,1);}finally{globalThis.fetch=original;}
+});
+test('consultation cancellation uses the server RPC and returns a recorded no-refund result',async()=>{
+  const original=globalThis.fetch,calls=[];
+  globalThis.fetch=async(url,options={})=>{
+    calls.push(String(url));let data;
+    if(String(url).endsWith('/auth/v1/user'))data={id};
+    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
+    else if(String(url).includes('/rpc/request_consultation_cancellation'))data={appointmentId:id,status:'not_due',policyPercent:0,eligibleAmount:0};
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});
+  };
+  try{
+    const response=await worker.fetch(new Request('https://api.test/api/consultations/cancel',{method:'POST',headers:{Authorization:'Bearer test'},body:JSON.stringify({appointmentId:id,reason:'Changed plan'})}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret'});
+    assert.equal(response.status,200);assert.equal((await response.json()).policyPercent,0);assert.ok(calls.some(url=>url.includes('request_consultation_cancellation')));
+  }finally{globalThis.fetch=original;}
+});
+test('processed refund webhook records the provider cumulative amount',async()=>{
+  const original=globalThis.fetch,refundId='rfnd_test',paymentId='pay_test',requestId=id;
+  const body=JSON.stringify({event:'refund.processed',payload:{refund:{entity:{id:refundId,payment_id:paymentId,amount:55000,notes:{refund_request_id:requestId}}}}});
+  const calls=[];
+  globalThis.fetch=async(url,options={})=>{
+    calls.push({url:String(url),options});let data=[];
+    if(String(url).includes('/payment_webhook_events?'))data=[];
+    else if(String(url).endsWith('/payment_webhook_events'))data=[];
+    else if(String(url)===`https://api.razorpay.com/v1/payments/${paymentId}`)data={amount_refunded:55000};
+    else if(String(url).includes('/rpc/record_payment_refund'))data={status:'partial'};
+    else if(String(url).includes('/payment_webhook_events?event_key='))data=[];
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});
+  };
+  try{
+    const response=await worker.fetch(new Request('https://api.test/api/webhooks/razorpay',{method:'POST',body,headers:{'x-razorpay-signature':await hmac('test',body),'x-razorpay-event-id':'event_refund'}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',RAZORPAY_WEBHOOK_SECRET:'test',RAZORPAY_KEY_ID:'key',RAZORPAY_KEY_SECRET:'secret'});
+    assert.equal(response.status,200);const rpcCall=calls.find(call=>call.url.includes('/rpc/record_payment_refund'));assert.ok(rpcCall);assert.equal(JSON.parse(rpcCall.options.body).p_total_refunded,55000);
+  }finally{globalThis.fetch=original;}
 });
