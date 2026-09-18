@@ -6,10 +6,10 @@
     const type=$('recordType').value;
     const data=await window.SIAOSApi('admin/records?type='+type+'&offset='+offset+(type==='calendar'&&date?'&date='+date:''));
     $('recordsHeading').textContent=type==='calendar'&&date?'Appointments · '+date+' · IST':$('recordType').selectedOptions[0].textContent;
-    const columns=[...new Set(data.rows.flatMap(row=>Object.keys(row)))];
+    const columns=[...new Set(data.rows.flatMap(row=>Object.keys(row)))];if(type==='refunds')columns.push('operator_action');
     const table=$('recordsTable');table.tHead.replaceChildren();table.tBodies[0].replaceChildren();
     const heading=table.tHead.insertRow();columns.forEach(key=>{const th=document.createElement('th');th.textContent=key.replace(/_/g,' ');heading.append(th);});
-    data.rows.forEach(row=>{const tr=table.tBodies[0].insertRow();columns.forEach(key=>{const td=tr.insertCell();if(row[key]&&typeof row[key]==='object'){const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='View details';pre.textContent=JSON.stringify(row[key],null,2);details.append(summary,pre);td.append(details);}else td.textContent=String(row[key]??'—');});});
+    data.rows.forEach(row=>{const tr=table.tBodies[0].insertRow();columns.forEach(key=>{const td=tr.insertCell();if(key==='operator_action'){if(['requested','processing','review_required'].includes(row.status)&&Number(row.eligible_amount)>0){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Reconcile / issue';button.onclick=()=>run(async()=>{button.disabled=true;status('Reconciling refund with Razorpay…');const result=await window.SIAOSApi('admin/refunds/'+row.id+'/issue',{method:'POST',body:{}});status('Refund '+result.status+'. Provider reference: '+(result.refundId||'pending'));await records();});td.append(button);}else td.textContent='—';}else if(row[key]&&typeof row[key]==='object'){const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='View details';pre.textContent=JSON.stringify(row[key],null,2);details.append(summary,pre);td.append(details);}else td.textContent=String(row[key]??'—');});});
     $('previousPage').disabled=offset===0;$('nextPage').disabled=!data.hasMore;
     $('recordPage').textContent=data.rows.length?`Records ${offset+1}–${offset+data.rows.length}`:'No records for this selection.';
   }
@@ -25,7 +25,7 @@
     const data=await window.SIAOSApi('admin/summary');
     $('mfaPanel').hidden=true;$('mfaQr').replaceChildren();$('adminWorkspace').hidden=false;
     const metrics=$('adminMetrics');metrics.replaceChildren();
-    for(const [label,value]of Object.entries({'Page views (30 days)':data.totals.page_views,'Consented visitors':data.totals.visitors,'Consultation requests':data.business.consultations,'Paid purchases':data.business.paid_orders,'Revenue (INR)':(data.business.revenue_paise/100).toLocaleString('en-IN')})){
+    for(const [label,value]of Object.entries({'Page views (30 days)':data.totals.page_views,'Consented visitors':data.totals.visitors,'Consultation requests':data.business.consultations,'Paid purchases':data.business.paid_orders,'Net revenue (INR)':(data.business.revenue_paise/100).toLocaleString('en-IN'),'Refunds requiring attention':data.business.refunds_pending||0})){
       const card=document.createElement('article'),n=document.createElement('strong'),text=document.createElement('span');n.textContent=value;text.textContent=label;card.append(n,text);metrics.append(card);
     }
     calendar();await records();status('Administrator verified. Times are shown in IST; raw timestamps retain their timezone.');
@@ -37,6 +37,18 @@
   $('nextPage').onclick=()=>run(async()=>{offset+=100;await records();});
   $('calendarRefresh').onclick=calendar;
   $('syncSheets').onclick=()=>run(async()=>{status('Syncing restricted operational Sheets…');const result=await window.SIAOSApi('admin/sheets-sync',{method:'POST',body:{}});status('Sheets sync complete: '+Object.entries(result.counts).map(([k,v])=>k+' '+v).join(', '));});
+  $('catalogForm').onsubmit=event=>{event.preventDefault();run(async()=>{
+    const unitAmount=Math.round(Number($('catalogPrice').value)*100),shippingAmount=Math.round(Number($('catalogShipping').value)*100);
+    if(!Number.isSafeInteger(unitAmount)||!Number.isSafeInteger(shippingAmount))throw new Error('Enter valid rupee amounts.');
+    const value={kind:$('catalogKind').value,slug:$('catalogSlug').value.trim(),variant:$('catalogVariant').value.trim(),name:$('catalogName').value.trim(),unitAmount,shippingAmount,active:$('catalogActive').checked};
+    await window.SIAOSApi('admin/catalog',{method:'POST',body:value});status('Approved catalogue price saved.');if($('recordType').value==='catalog'){offset=0;await records();}
+  });};
+  $('refundForm').onsubmit=event=>{event.preventDefault();run(async()=>{
+    if(!confirm('Issue this approved refund to the original payment method?'))return;
+    const amount=Math.round(Number($('refundAmount').value)*100);if(!Number.isSafeInteger(amount))throw new Error('Enter a valid rupee amount.');
+    const result=await window.SIAOSApi('admin/refunds',{method:'POST',body:{transactionId:$('refundTransaction').value.trim(),amount,reason:$('refundReason').value.trim()}});
+    status('Refund '+(result.refund?.status||result.status)+'. Request '+result.id+'.');$('refundForm').reset();if($('recordType').value==='refunds'){offset=0;await records();}
+  });};
   $('adminSignOut').onclick=async()=>{await account.signOut();location.replace('login.html');};
   $('enrolMfa').onclick=()=>run(async()=>{
     const {data,error}=await account.client.auth.mfa.enroll({factorType:'totp',friendlyName:'SIAOS administrator'});if(error)throw error;factorId=data.id;
