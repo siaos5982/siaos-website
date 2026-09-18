@@ -1,4 +1,4 @@
-# SIAOS website — staged backend foundation
+# SIAOS website — production backend candidate
 
 Static website + Supabase Auth/PostgreSQL + Cloudflare Worker API. This branch is
 **not a completed production deployment**. `main` and `siaos.in` are unchanged.
@@ -25,7 +25,8 @@ Playwright and a Chromium binary. It is not included in `npm test`.
 - `audit/REPOSITORY_AUDIT.md`: findings, page categories, limitations, pending work.
 - `audit/repository-inventory.json`: all 287 original files at the audited commit.
 - `backend/DEPLOYMENT.md`: staging setup, secrets, tests, and launch gates.
-- `supabase/migrations/20260917_backend.sql`: incremental backend migration.
+- `supabase/migrations/20260917_backend.sql`: core incremental backend migration.
+- `supabase/migrations/20260918_refunds_catalog.sql`: refund workflow, paid-report fulfilment, and approved storefront catalogue.
 - `admin.html`: administrator dashboard, authenticator verification, calendar.
 
 The database is the authoritative source. Google Sheets is a restricted reporting
