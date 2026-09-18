@@ -14,7 +14,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 - Booking slot RPCs and several commerce tables existed, but consultation details were not reliably saved server-side.
 - The payment page was a placeholder; browser data was trusted and there was no gateway verification or webhook fulfilment.
 - No private staff dashboard or production API existed.
-- The public footer referenced six pages that are not present: Contact, Privacy, Terms, Shipping, Cancellation, and Refunds.
+- The audited baseline referenced six missing public pages. This branch now supplies themed Contact, Privacy, Terms, Shipping, Cancellation, and Refund pages using verified business contact details already present on the main page.
 
 ## Implemented on this branch
 
@@ -33,8 +33,8 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 1. Apply the incremental Supabase migration to staging, then verify every RPC and Row Level Security policy.
 2. Configure production secrets and identifiers listed in `backend/DEPLOYMENT.md`; never commit secret values.
 3. Add verified catalogue prices and Razorpay product/consultation mappings.
-4. Provide approved legal/business content for the six missing footer pages. Payments must remain disabled until the published policies accurately reflect the business.
-5. Confirm business contact details, fulfilment timelines, cancellation/refund rules, shipping regions/rates, legal entity name, and applicable tax/GST details.
+4. Business owner and qualified Indian counsel should review the new customer policies before payments are enabled, particularly the 24-hour consultation cancellation rule, 7-day physical-return request window, and product exclusions.
+5. Confirm any applicable tax/GST details and designate the individual grievance officer before production checkout is enabled.
 6. Share the private reporting spreadsheet with the backend Google service account and set its spreadsheet ID.
 7. Complete Razorpay and Supabase production-domain configuration for `siaos.in` and `www.siaos.in`.
 8. Run staging OTP, TOTP, checkout, webhook, refund, booking concurrency, sheet export, accessibility, and browser regression checks before enabling feature flags.
@@ -50,4 +50,4 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 - `npm test`: 26 passing tests.
 - `node --check`: backend worker and Sheets integration parse successfully.
 - `git diff --check`: no whitespace errors.
-- Repository audit: no duplicate HTML IDs detected; six missing policy/contact references remain explicit launch blockers.
+- Repository audit: no duplicate HTML IDs detected and all six footer policy/contact references now resolve.
