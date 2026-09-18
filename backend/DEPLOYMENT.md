@@ -26,7 +26,7 @@ Do not paste secrets into chat or repository files. Use the provider's secret ma
 ## Database staging
 
 For a completely NEW test Supabase project, apply `supabase/schema.sql` once, then
-`supabase/migrations/20260917_backend.sql`. On an existing project, first inspect
+`supabase/migrations/20260917_backend.sql` and `supabase/migrations/20260918_refunds_catalog.sql`. On an existing project, first inspect
 what is actually installed. The old schema file has non-idempotent CREATE POLICY
 statements: do not rerun it blindly. Back up production before any migration.
 
@@ -35,8 +35,9 @@ rate limits and a Sheets job lock; strengthens slot validation; and adds atomic
 consultation saving/payment fulfilment RPCs. New administrative functions are
 service-role-only. There are no client-writable admin flags.
 
-Populate `catalog_prices` using approved values in **paise**, with one row per
-product variant or consultation subtype. Keep rows inactive until reviewed.
+Published product variants and the ₹99 compatibility report are seeded in
+`catalog_prices`. Use the MFA-protected admin catalogue to add approved consultation
+values in **paise**, with one row per consultation subtype. Keep unreviewed rows inactive.
 For consultations `slug` is one of kundli/numerology/vastu/tarot/face/paranormal,
 and `variant` must match the exact `related_service` label in booking.js.
 For products `slug` and `variant` must match products-data.js. Do not infer different
@@ -70,24 +71,28 @@ payments already initiated.
 ## Razorpay
 
 - Set webhook URL to `https://<worker>/api/webhooks/razorpay`.
-- Subscribe to payment.captured, order.paid, payment.failed and refund.processed.
+- Subscribe to payment.captured, order.paid, payment.failed, refund.processed and refund.failed.
 - Configure automatic capture in Razorpay; an authorized but uncaptured payment is
   not fulfilled by this code.
-- Browser checkout sends only item identifiers, quantity, address/consultation ID
-  and consent. The server looks up price and creates the provider order.
+- Browser checkout sends only item identifiers, quantity, address/consultation ID,
+  reduced compatibility numbers where applicable, and consent. The server looks
+  up price, generates paid-report content, and creates the provider order.
 - Verification checks HMAC, authenticated ownership, provider capture status, order
   ID, amount and currency. Database fulfilment and paid status commit atomically.
 - Completed webhook replay is ignored. Simultaneous callbacks are serialized by
   the ledger row lock. Failed attempts do not overwrite a captured payment.
 - Payment received after a slot expires is flagged for human reschedule/refund;
   it never steals another customer's slot. Check raw_status in the payment report.
-- Full refunds are reflected in records; partial refunds are flagged for review.
-  Initiating refunds, dispute handling and reconciliation tooling remain pending.
+- Customer consultation cancellation applies the published 75% / 50% / 25% / 0%
+  schedule from server time, frees the slot atomically, and initiates the eligible
+  amount to the original payment. Full and partial refunds are recorded from signed
+  provider webhooks. The admin can reconcile/retry a request or create an audited
+  operator refund for an approved duplicate payment, SIAOS cancellation, or legal remedy.
 - If provider order creation succeeds but a subsequent write fails, the checkout
   intent stays locked. Reconcile by receipt in Razorpay; do not blindly create a
   replacement payment. This recovery currently requires an operator.
-- Report checkout deliberately remains disabled until a real deliverable and
-  secure paid-report generation workflow are implemented.
+- The compatibility report is generated server-side, fulfilled atomically after
+  capture, and readable only by the purchasing account for 15 days.
 
 ## Google Sheets
 
@@ -102,6 +107,8 @@ The application manages these reserved tabs in the dedicated spreadsheet:
 | SIAOS_calendar | Appointment times, status, client name, phone and request ID |
 | SIAOS_orders | Items, delivery details, payment/dispatch status |
 | SIAOS_payments | Gateway references, amount, currency, capture/refund status |
+| SIAOS_refunds | Cancellation/operator requests, policy percentage, eligible amount and provider status |
+| SIAOS_catalog | Server-approved product, report and consultation prices |
 | SIAOS_visitors | Consented anonymous events, path, device and referrer domain |
 | SIAOS_readings | Reading history metadata, not private reading content |
 | SIAOS_reports | Purchase and report access history |
