@@ -169,6 +169,7 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
     if (config.supabaseUrl && config.supabasePublishableKey && !window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
     await loadScript(new URL('account-store.js?v=20260831-1',base).href);
     await loadScript(new URL('auth-ui.js?v=20260831-1',base).href);
+    await loadScript(new URL('whatsapp_connector.js',base).href);
   })().catch(() => {});
 })();
 
@@ -196,6 +197,6 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
     if(!window.SIAOS_AUTH_CONFIG)await load('auth-config.js');
     if(!window.SIAOS_AUTH_CONFIG?.backendUrl) return;
     await load('analytics.js');
-    if(document.querySelector('#videos'))await load('youtube-live.js');
+    // Live YouTube integration is not implemented; existing content stays visible.
   })().catch(()=>{});
 })();

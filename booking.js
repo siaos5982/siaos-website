@@ -7,8 +7,7 @@ const services = {
   paranormal: 'Paranormal Consultation'
 };
 
-// Paste the deployed Google Apps Script web-app URL here.
-const GOOGLE_SHEETS_WEB_APP_URL = '';
+// Client data is saved through the authenticated backend; Sheets sync is server-side.
 
 const relatedServices = {
   kundli: ['Complete Birth Chart Analysis','Marriage and Compatibility','Career and Wealth Guidance','Health Indicators','Dasha and Transit Timing','Personalised Remedies'],
@@ -37,8 +36,8 @@ const bookingMax=`${bookingLimitDate.getFullYear()}-${String(bookingLimitDate.ge
 function locationFields(prefix, legend) {
   return `<fieldset class="location-fields full"><legend>${legend}</legend>
     <label>City *<input name="${prefix}City" data-city data-prefix="${prefix}" list="cityOptions" autocomplete="off" placeholder="Start typing, for example Su" required></label>
-    <label>State *<input name="${prefix}State" data-state-for="${prefix}" readonly required></label>
-    <label>Country *<input name="${prefix}Country" data-country-for="${prefix}" readonly required></label>
+    <label>State *<input name="${prefix}State" data-state-for="${prefix}" required></label>
+    <label>Country *<input name="${prefix}Country" data-country-for="${prefix}" required></label>
   </fieldset>`;
 }
 
@@ -51,23 +50,21 @@ function consultationMode() {
 
 function consent() {
   return `<fieldset class="appointment-picker full"><legend>Select appointment *</legend><label>Appointment date<input id="appointmentDate" name="appointmentDate" type="date" min="${today}" max="${bookingMax}" required></label><div><span class="appointment-slot-label">Available timings</span><div id="appointmentSlots" class="appointment-slots"><p>Select a date to view available appointments.</p></div><small id="appointmentStatus" class="appointment-status">Monday–Saturday · Appointments can be booked up to one month ahead.</small></div></fieldset><div class="consent full">
-    <label><input type="checkbox" name="disclaimerAccepted" required><span>I confirm that the information I have provided is accurate. I understand that SIAOS does not guarantee that any consultation, guidance or astrological remedy will produce 100% results. SIAOS recommends the astrological remedy considered most suitable for my circumstances, with the intention of providing guidance and possible relief; individual results may vary. These services do not replace medical, legal, financial or other licensed professional advice. I consent to SIAOS using my details only to arrange and provide my requested consultation.</span></label>
+    <label><input type="checkbox" name="disclaimerAccepted" required><span>I confirm that the information I have provided is accurate. I understand that SIAOS does not guarantee that any consultation, guidance or astrological remedy will produce 100% results. SIAOS recommends the astrological remedy considered most suitable for my circumstances, with the intention of providing guidance and possible relief; individual results may vary. These services do not replace medical, legal, financial or other licensed professional advice. I consent to secure storage of my submitted details to arrange my consultation, including in SIAOS’s restricted admin dashboard and operational Google Sheets.</span></label>
   </div>
-  <button class="btn fill full payment-next" type="submit" disabled>Proceed to Payment</button>`;
+  <button class="btn fill full booking-submit" type="submit" disabled>Send booking on WhatsApp</button>`;
 }
 
-const slotLabel=hour=>{const start=hour===12?'12:00 PM':hour>12?`${hour-12}:00 PM`:`${hour}:00 AM`;const endHour=hour===12?'12:30 PM':hour>12?`${hour-12}:30 PM`:`${hour}:30 AM`;return `${start} – ${endHour}`;};
-function previewSlots(date){return Array.from({length:9},(_,index)=>{const hour=10+index;return {start_at:`${date}T${String(hour).padStart(2,'0')}:00:00+05:30`,label:slotLabel(hour)}});}
 async function initialiseAppointmentPicker(form){
   const dateInput=form.querySelector('#appointmentDate');const slotsTarget=form.querySelector('#appointmentSlots');const statusTarget=form.querySelector('#appointmentStatus');
   dateInput.addEventListener('change',async()=>{
     slotsTarget.innerHTML='<p>Checking availability…</p>';const chosen=new Date(`${dateInput.value}T12:00:00`);
     if(!dateInput.value||chosen.getDay()===0){slotsTarget.innerHTML='<p>Appointments are unavailable on Sundays. Please select Monday–Saturday.</p>';return;}
-    let slots=[];let preview=false;
-    try{const session=await window.SIAOSAccount?.getSession();if(!window.SIAOSAccount?.client||session?.demo){slots=previewSlots(dateInput.value);preview=true;}else{const {data,error}=await window.SIAOSAccount.client.rpc('available_appointment_slots',{p_date:dateInput.value});if(error)throw error;slots=data||[];}}
-    catch(error){slotsTarget.innerHTML=`<p>${error.message||'Availability could not be loaded.'}</p>`;return;}
+    let slots=[];
+    try{if(!window.SIAOSAccount?.client)throw new Error('Live appointment availability is temporarily unavailable.');const {data,error}=await window.SIAOSAccount.client.rpc('available_appointment_slots',{p_date:dateInput.value});if(error)throw error;slots=data||[];}
+    catch(error){slotsTarget.textContent=error.message||'Availability could not be loaded.';return;}
     slotsTarget.innerHTML=slots.length?slots.map((slot,index)=>`<label class="appointment-slot"><input type="radio" name="appointmentStart" value="${slot.start_at}" ${index===0?'required':''}><span>${slot.label}</span></label>`).join(''):'<p>No appointments remain for this date. Please choose another date.</p>';
-    statusTarget.textContent=preview?'Developer preview availability · the selected time will be saved in this browser.':'Live availability · your selection is held for 15 minutes when you continue.';
+    statusTarget.textContent='Live availability · your selected time is reserved when the booking request is saved.';
   });
 }
 
@@ -90,12 +87,15 @@ function numerologyForm() {
   return `<label class="full">Full name as on legal documents / bank records *<input name="legalName" autocomplete="name" required></label>
     <label>Date of birth *<input name="dateOfBirth" type="date" max="${today}" required></label>
     <label>All phone numbers registered in your name *<textarea name="ownedPhoneNumbers" rows="4" placeholder="Enter one phone number per line" required></textarea></label>
+    <label>Phone number *<input name="phone" type="tel" autocomplete="tel" required></label>
+    <label>WhatsApp number *<input name="whatsapp" type="tel" required></label>
     <label class="full">Company name <small class="field-note">Only if the company is owned by you</small><input name="companyName"></label>
     ${consultationMode()}${consent()}`;
 }
 
 function vastuForm() {
-  return `<label class="full">Property status *<select name="propertyStatus" id="propertyStatus" required><option value="">Choose New or Old Property</option><option>New Property</option><option>Old Property</option></select></label>
+  return `<label>Full name *<input name="fullName" autocomplete="name" required></label>
+    <label>Property status *<select name="propertyStatus" id="propertyStatus" required><option value="">Choose New or Old Property</option><option>New Property</option><option>Old Property</option></select></label>
     <fieldset id="propertyTypeStage" class="choice-field full staged-field" hidden><legend>Type of property *</legend>
       ${['Residential Property','Commercial Property','Plot / Farm','Industrial Property'].map(v=>`<label class="choice-card"><input type="radio" name="propertyType" value="${v}"><span><strong>${v}</strong></span></label>`).join('')}
     </fieldset>
@@ -103,20 +103,24 @@ function vastuForm() {
       <label class="choice-card"><input type="radio" name="analysisMode" value="Based on Google Map"><span><strong>Based on Google Map</strong><small>Remote directional and location review</small></span></label>
       <label class="choice-card"><input type="radio" name="analysisMode" value="In-person visit at property"><span><strong>In-person visit</strong><small>Visit at the property</small></span></label>
     </fieldset>
-    <label class="full">Phone number *<input name="phone" type="tel" autocomplete="tel" required></label>
-    ${consent()}`;
+    <label>Phone number *<input name="phone" type="tel" autocomplete="tel" required></label>
+    <label>WhatsApp number *<input name="whatsapp" type="tel" required></label>
+    ${consultationMode()}${consent()}`;
 }
 
 function tarotForm() {
   return `<label>Full name *<input name="fullName" autocomplete="name" required></label>
     <label>Date of birth *<input name="dateOfBirth" type="date" max="${today}" required></label>
+    <label>Phone number *<input name="phone" type="tel" autocomplete="tel" required></label>
+    <label>WhatsApp number *<input name="whatsapp" type="tel" required></label>
     ${consultationMode()}${consent()}`;
 }
 
 function faceForm() {
   return `<label>Full name *<input name="fullName" autocomplete="name" required></label>
     <label>Date of birth *<input name="dateOfBirth" type="date" max="${today}" required></label>
-    <label class="full">Phone number *<input name="phone" type="tel" autocomplete="tel" required></label>
+    <label>Phone number *<input name="phone" type="tel" autocomplete="tel" required></label>
+    <label>WhatsApp number *<input name="whatsapp" type="tel" required></label>
     ${locationFields('current','Current place')}
     ${consultationMode()}${consent()}`;
 }
@@ -124,8 +128,36 @@ function faceForm() {
 function paranormalForm() {
   return `<label>Full name *<input name="fullName" autocomplete="name" required></label>
     <label>Phone number *<input name="phone" type="tel" autocomplete="tel" required></label>
+    <label>WhatsApp number *<input name="whatsapp" type="tel" required></label>
     ${locationFields('current','Current location')}
-    ${consent()}`;
+    ${consultationMode()}${consent()}`;
+}
+
+const whatsappLabels={
+  fullName:'Full name',legalName:'Legal name',dateOfBirth:'Date of birth',birthCity:'Birth city',birthState:'Birth state',birthCountry:'Birth country',birthHour:'Birth hour',birthMinute:'Birth minute',birthPeriod:'Birth AM/PM',phone:'Phone number',whatsapp:'WhatsApp number',currentCity:'Current city',currentState:'Current state',currentCountry:'Current country',consultationMode:'Appointment mode',ownedPhoneNumbers:'Phone numbers owned',companyName:'Company name',propertyStatus:'Property status',propertyType:'Property type',analysisMode:'Analysis mode'
+};
+const cleanMessageValue=value=>String(value??'').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim().slice(0,500);
+function bookingWhatsAppUrl(booking){
+  const start=new Date(booking.appointmentStart),end=new Date(start.getTime()+30*60*1000);
+  const date=new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'full'}).format(start);
+  const time=value=>new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit'}).format(value);
+  const lines=[
+    'Hello SIAOS, I have submitted a consultation booking request.',
+    '',`Booking reference: ${cleanMessageValue(booking.consultationId)}`,
+    `Name: ${cleanMessageValue(booking.details.fullName||booking.details.legalName)}`,
+    `Service: ${cleanMessageValue(booking.serviceName)}`,
+    `Consultation: ${cleanMessageValue(booking.relatedService)}`,
+    `Appointment date: ${date}`,
+    `Appointment time: ${time(start)} – ${time(end)} IST`,
+    `Appointment mode: ${cleanMessageValue(booking.details.consultationMode)}`,
+    '', 'Submitted details:'
+  ];
+  for(const [key,label] of Object.entries(whatsappLabels)){
+    const value=cleanMessageValue(booking.details[key]);
+    if(value&&!['fullName','legalName','consultationMode'].includes(key))lines.push(`${label}: ${value}`);
+  }
+  lines.push('','My booking details are saved in my SIAOS account. Please confirm the appointment and share the consultation payment instructions here.');
+  return `https://wa.me/919173569555?text=${encodeURIComponent(lines.join('\n'))}`;
 }
 
 const templates = {kundli:kundliForm,numerology:numerologyForm,vastu:vastuForm,tarot:tarotForm,face:faceForm,paranormal:paranormalForm};
@@ -164,7 +196,7 @@ function renderForm(service) {
   formSection.hidden = false;
   const form = document.querySelector('#serviceForm');
   const consentBox = form.querySelector('[name="disclaimerAccepted"]');
-  const proceed = form.querySelector('.payment-next');
+  const proceed = form.querySelector('.booking-submit');
   initialiseAppointmentPicker(form);
   consentBox.addEventListener('change', () => proceed.disabled = !consentBox.checked);
   form.querySelectorAll('[data-city]').forEach(input => {
@@ -190,43 +222,23 @@ function renderForm(service) {
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!form.reportValidity() || !consentBox.checked) return;
-    const details = Object.fromEntries(new FormData(form).entries());
-    const session=await window.SIAOSAccount?.getSession();
-    let appointmentId=`preview-${Date.now()}`;
-    if(window.SIAOSAccount?.client&&!session?.demo){const {data,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});if(error){alert(error.message||'This appointment is no longer available. Please select another time.');return;}appointmentId=data;}
-    const booking = {service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
-    sessionStorage.setItem('siaosBooking', JSON.stringify(booking));
-
-    const backendUrl = String(window.SIAOS_AUTH_CONFIG?.backendUrl || '').replace(/\/$/,'');
-    if (!backendUrl && !GOOGLE_SHEETS_WEB_APP_URL && !window.SIAOSAccount?.client && !session?.demo) {
-      alert('The secure booking service is not configured yet.');
-      return;
-    }
-
-    proceed.disabled = true;
-    const originalLabel = proceed.textContent;
-    proceed.textContent = 'Saving your details…';
-
+    proceed.disabled=true;
+    proceed.textContent='Saving your details…';
     try {
-      if (backendUrl) {
-        const response = await fetch(`${backendUrl}/api/consultations`, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json','Authorization':`Bearer ${session?.access_token || ''}`},
-          body: JSON.stringify(booking)
-        });
-        if (!response.ok) throw new Error((await response.json().catch(()=>({}))).error || 'The booking could not be saved.');
-      } else if (GOOGLE_SHEETS_WEB_APP_URL) {
-        await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
-          method: 'POST', mode: 'no-cors',
-          headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(booking)
-        });
-      }
-      location.href = 'payment.html';
-    } catch (error) {
-      console.error('Google Sheets submission failed:', error);
-      alert('We could not save your details. Please check your connection and try again.');
-      proceed.disabled = false;
-      proceed.textContent = originalLabel;
+      const details=Object.fromEntries(new FormData(form).entries());
+      const session=await window.SIAOSAccount?.getSession();
+      if(!session?.access_token || !window.SIAOS_AUTH_CONFIG?.backendUrl) throw new Error('Verified login and the secure booking backend must be configured before booking.');
+      const {data:appointmentId,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});
+      if(error)throw error;
+      const booking={service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
+      const saved=await window.SIAOSApi('consultations',{method:'POST',body:booking});
+      booking.consultationId=saved.id;
+      proceed.textContent='Opening WhatsApp…';
+      location.assign(bookingWhatsAppUrl(booking));
+    } catch(error) {
+      alert(error.message||'We could not save your details. Please try again.');
+      proceed.disabled=false;
+      proceed.textContent='Send booking on WhatsApp';
     }
   });
 

@@ -1,0 +1,21 @@
+name = "siaos-api"
+main = "worker.mjs"
+compatibility_date = "2026-09-01"
+
+# Deploy to a preview Worker first. No live domain is changed by this file.
+[vars]
+ALLOWED_ORIGINS = "https://siaos.in,https://www.siaos.in"
+PAYMENTS_ENABLED = "false"
+ANALYTICS_ENABLED = "false"
+SHEETS_SYNC_ENABLED = "false"
+SHEETS_MAX_ROWS = "10000"
+GOOGLE_SHEET_ID = "1TqpXUqp17jlVoy2B4d9kbMLot1URN8xFElhwRWEsq2o"
+
+# Optional hourly sync; enable only after the restricted reporting Sheet is ready.
+# [triggers]
+# crons = ["0 * * * *"]
+
+# Set via wrangler secret put; never commit real values:
+# SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_USER_IDS (comma-separated UUIDs)
+# RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
+# GOOGLE_SERVICE_ACCOUNT_JSON
