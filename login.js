@@ -54,10 +54,6 @@
   };
   tabs.forEach(tab => tab.addEventListener('click',() => setMode(tab.dataset.authMode)));
 
-  const developerAccess=document.querySelector('#developerAccess');
-  developerAccess.hidden=!(account?.isLocalPreview && window.SIAOS_AUTH_CONFIG?.developerPreviewEnabled);
-  document.querySelector('#developerLogin').addEventListener('click',async()=>{const button=document.querySelector('#developerLogin');button.disabled=true;setStatus('Opening the developer preview…');try{await account.developerLogin();setStatus('Developer preview ready.','success');location.replace(safeNext());}catch(error){setStatus(error.message||'Developer preview could not be opened.','error');button.disabled=false;}});
-
   account?.getSession().then(session => { if (session) location.replace(safeNext()); });
 
   phoneForm.addEventListener('submit',async event => {
@@ -67,7 +63,6 @@
     try {
       const result = await requestCode();
       document.querySelector('#otpPhone').textContent = result.phone;
-      document.querySelector('#demoOtpHint').hidden = !result.demoCode;
       phoneStep.hidden = true; otpStep.hidden = false; setStatus('Code sent. It expires shortly.','success'); document.querySelector('#authOtp').focus();
     } catch (error) { setStatus(error.message || 'The OTP could not be sent.','error'); }
     finally { button.disabled = false; }

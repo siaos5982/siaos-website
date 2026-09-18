@@ -16,7 +16,7 @@ try{
   const context=await browser.newContext();
   await context.route('**/*',async route=>{
     const url=new URL(route.request().url());
-    if(url.pathname==='/auth-config.js')return route.fulfill({contentType:'application/javascript',body:'window.SIAOS_AUTH_CONFIG={supabaseUrl:"https://db.test",supabasePublishableKey:"test",backendUrl:"https://api.test",developerPreviewEnabled:false,promptDelayMs:1000000};'});
+    if(url.pathname==='/auth-config.js')return route.fulfill({contentType:'application/javascript',body:'window.SIAOS_AUTH_CONFIG={supabaseUrl:"https://db.test",supabasePublishableKey:"test",backendUrl:"https://api.test",promptDelayMs:1000000};'});
     if(url.hostname==='cdn.jsdelivr.net')return route.fulfill({contentType:'application/javascript',body:`window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'test',user:{id:'22222222-2222-4222-8222-222222222222',phone:'+919999999999'}}}}),onAuthStateChange:()=>{},signOut:async()=>({}),mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal2'}})}}})};`});
     if(url.hostname==='api.test'){
       const data=url.pathname.endsWith('/summary')?{totals:{page_views:20,visitors:5},business:{consultations:3,paid_orders:2,revenue_paise:110000}}:url.pathname.endsWith('/records')?{rows:[{id:'test',details:{fullName:'<img src=x onerror=alert(1)>',dateOfBirth:'1990-01-01'},status:'new'}],hasMore:false}:{};
@@ -27,7 +27,7 @@ try{
   });
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/admin.html');await page.waitForSelector('#adminWorkspace:not([hidden])');
-  assert.equal(await page.locator('.admin-metrics article').count(),5);
+  assert.equal(await page.locator('.admin-metrics article').count(),6);
   await page.locator('#recordsTable details').first().click();assert.ok((await page.locator('#recordsTable').textContent()).includes('<img src=x onerror=alert(1)>'));
   assert.equal(await page.locator('#recordsTable img').count(),0);
   await page.locator('#adminCalendar button').first().click();await page.waitForFunction(()=>document.getElementById('recordsHeading').textContent.startsWith('Appointments'));

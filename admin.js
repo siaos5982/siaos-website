@@ -6,10 +6,36 @@
     const type=$('recordType').value;
     const data=await window.SIAOSApi('admin/records?type='+type+'&offset='+offset+(type==='calendar'&&date?'&date='+date:''));
     $('recordsHeading').textContent=type==='calendar'&&date?'Appointments · '+date+' · IST':$('recordType').selectedOptions[0].textContent;
-    const columns=[...new Set(data.rows.flatMap(row=>Object.keys(row)))];if(type==='refunds')columns.push('operator_action');
+    const columns=[...new Set(data.rows.flatMap(row=>Object.keys(row)))];if(['refunds','calendar'].includes(type))columns.push('operator_action');
     const table=$('recordsTable');table.tHead.replaceChildren();table.tBodies[0].replaceChildren();
     const heading=table.tHead.insertRow();columns.forEach(key=>{const th=document.createElement('th');th.textContent=key.replace(/_/g,' ');heading.append(th);});
-    data.rows.forEach(row=>{const tr=table.tBodies[0].insertRow();columns.forEach(key=>{const td=tr.insertCell();if(key==='operator_action'){if(['requested','processing','review_required'].includes(row.status)&&Number(row.eligible_amount)>0){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Reconcile / issue';button.onclick=()=>run(async()=>{button.disabled=true;status('Reconciling refund with Razorpay…');const result=await window.SIAOSApi('admin/refunds/'+row.id+'/issue',{method:'POST',body:{}});status('Refund '+result.status+'. Provider reference: '+(result.refundId||'pending'));await records();});td.append(button);}else td.textContent='—';}else if(row[key]&&typeof row[key]==='object'){const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='View details';pre.textContent=JSON.stringify(row[key],null,2);details.append(summary,pre);td.append(details);}else td.textContent=String(row[key]??'—');});});
+    data.rows.forEach(row=>{const tr=table.tBodies[0].insertRow();columns.forEach(key=>{
+      const td=tr.insertCell();
+      if(key==='operator_action'&&type==='refunds'){
+        if(['requested','processing','review_required'].includes(row.status)&&Number(row.eligible_amount)>0){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Reconcile / issue';button.onclick=()=>run(async()=>{button.disabled=true;status('Reconciling refund with Razorpay…');const result=await window.SIAOSApi('admin/refunds/'+row.id+'/issue',{method:'POST',body:{}});status('Refund '+result.status+'. Provider reference: '+(result.refundId||'pending'));await records();});td.append(button);}else td.textContent='—';
+      }else if(key==='operator_action'&&type==='calendar'){
+        if(row.status==='requested'){
+          const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Confirm WhatsApp payment';button.onclick=()=>run(async()=>{
+            const rupees=prompt('Consultation amount received (₹):','');if(rupees===null)return;
+            const amount=Math.round(Number(rupees)*100);if(!Number.isSafeInteger(amount)||amount<=0)throw new Error('Enter a valid received amount.');
+            const method=prompt('Direct payment method (for example UPI or bank transfer):','UPI');if(method===null)return;
+            const reference=prompt('Payment reference:','');if(reference===null)return;
+            if(!confirm('Confirm this appointment and record the direct payment?'))return;
+            button.disabled=true;const result=await window.SIAOSApi('admin/consultations/'+row.id+'/confirm',{method:'POST',body:{amount,method,reference}});
+            status('Appointment confirmed. Direct payment recorded: ₹'+(result.amount/100).toLocaleString('en-IN'));await records();
+          });td.append(button);
+        }else if(row.status==='cancelled'&&row.direct_refund_status==='required'){
+          const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Record direct refund';button.onclick=()=>run(async()=>{
+            const reference=prompt('Direct refund reference:','');if(reference===null)return;
+            if(!confirm('Mark the recorded direct refund as completed?'))return;
+            button.disabled=true;const result=await window.SIAOSApi('admin/consultations/'+row.id+'/direct-refund',{method:'POST',body:{reference}});
+            status('Direct consultation refund recorded: ₹'+(result.amount/100).toLocaleString('en-IN'));await records();
+          });td.append(button);
+        }else td.textContent='—';
+      }else if(row[key]&&typeof row[key]==='object'){
+        const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='View details';pre.textContent=JSON.stringify(row[key],null,2);details.append(summary,pre);td.append(details);
+      }else td.textContent=String(row[key]??'—');
+    });});
     $('previousPage').disabled=offset===0;$('nextPage').disabled=!data.hasMore;
     $('recordPage').textContent=data.rows.length?`Records ${offset+1}–${offset+data.rows.length}`:'No records for this selection.';
   }
@@ -25,7 +51,7 @@
     const data=await window.SIAOSApi('admin/summary');
     $('mfaPanel').hidden=true;$('mfaQr').replaceChildren();$('adminWorkspace').hidden=false;
     const metrics=$('adminMetrics');metrics.replaceChildren();
-    for(const [label,value]of Object.entries({'Page views (30 days)':data.totals.page_views,'Consented visitors':data.totals.visitors,'Consultation requests':data.business.consultations,'Paid purchases':data.business.paid_orders,'Net revenue (INR)':(data.business.revenue_paise/100).toLocaleString('en-IN'),'Refunds requiring attention':data.business.refunds_pending||0})){
+    for(const [label,value]of Object.entries({'Page views (30 days)':data.totals.page_views,'Consented visitors':data.totals.visitors,'Consultation requests':data.business.consultations,'Paid purchases':data.business.paid_orders,'Razorpay net revenue (INR)':(data.business.revenue_paise/100).toLocaleString('en-IN'),'Refunds requiring attention':data.business.refunds_pending||0})){
       const card=document.createElement('article'),n=document.createElement('strong'),text=document.createElement('span');n.textContent=value;text.textContent=label;card.append(n,text);metrics.append(card);
     }
     calendar();await records();status('Administrator verified. Times are shown in IST; raw timestamps retain their timezone.');
@@ -59,7 +85,7 @@
     const {error}=await account.client.auth.mfa.challengeAndVerify({factorId,code:$('mfaCode').value});if(error)throw error;$('mfaCode').value='';await openDashboard();
   });};
   run(async()=>{
-    const session=await account.getSession();if(!session?.access_token||session.demo){location.replace('login.html?mode=signin&next=admin.html');return;}
+    const session=await account.getSession();if(!session?.access_token){location.replace('login.html?mode=signin&next=admin.html');return;}
     const india=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit'}).format(new Date());
     $('calendarMonth').value=/^\d{4}-\d{2}$/.test(india)?india:new Date().toISOString().slice(0,7);
     const {data,error}=await account.client.auth.mfa.getAuthenticatorAssuranceLevel();if(error)throw error;

@@ -14,7 +14,7 @@ All provider-backed behaviour must be tested in staging before activation.
 3. Supply the approved administrator's Supabase user UUID via server configuration.
    The person signs in with phone OTP and enrols an authenticator app at `/admin.html`.
 4. Use Razorpay TEST credentials first. Production requires an activated merchant
-   account, approved prices for every product size/consultation subtype, delivery
+   account, approved prices for every product size and the ₹99 report, delivery
    availability, tax/shipping treatment and final refund/cancellation policies.
 5. Create a NEW, dedicated, restricted Google spreadsheet. Share only that spreadsheet
    with the designated Google service account. Do not use public/link sharing.
@@ -26,22 +26,21 @@ Do not paste secrets into chat or repository files. Use the provider's secret ma
 ## Database staging
 
 For a completely NEW test Supabase project, apply `supabase/schema.sql` once, then
-`supabase/migrations/20260917_backend.sql` and `supabase/migrations/20260918_refunds_catalog.sql`. On an existing project, first inspect
+`supabase/migrations/20260917_backend.sql`, `supabase/migrations/20260918_refunds_catalog.sql`, and `supabase/migrations/20260919_whatsapp_consultations.sql`. On an existing project, first inspect
 what is actually installed. The old schema file has non-idempotent CREATE POLICY
 statements: do not rerun it blindly. Back up production before any migration.
 
 The migration adds server-owned catalog pricing, checkout intents, audit logs, API
 rate limits and a Sheets job lock; strengthens slot validation; and adds atomic
-consultation saving/payment fulfilment RPCs. New administrative functions are
+consultation saving and WhatsApp-request RPCs. New administrative functions are
 service-role-only. There are no client-writable admin flags.
 
 Published product variants and the ₹99 compatibility report are seeded in
-`catalog_prices`. Use the MFA-protected admin catalogue to add approved consultation
-values in **paise**, with one row per consultation subtype. Keep unreviewed rows inactive.
-For consultations `slug` is one of kundli/numerology/vastu/tarot/face/paranormal,
-and `variant` must match the exact `related_service` label in booking.js.
+`catalog_prices`. Use the MFA-protected admin catalogue only for approved physical
+product prices in **paise**. Consultation catalogue rows are disabled: consultation
+confirmation and payment instructions are handled in the verified WhatsApp conversation.
 For products `slug` and `variant` must match products-data.js. Do not infer different
-variant prices from a single displayed product price. No report sales are enabled.
+variant prices from a single displayed product price.
 
 ## Worker configuration
 
@@ -61,7 +60,7 @@ https://siaos.in and https://www.siaos.in. Add staging separately. No wildcard C
 Never expose service-role, gateway secret, or Google private key in auth-config.js.
 Set auth-config.js backendUrl to the deployed Worker origin, and turnstileSiteKey
 to the public CAPTCHA site key configured in Supabase. The existing Supabase public
-key is not a server secret. Developer preview stays disabled on public hosts.
+key is not a server secret. No browser OTP bypass is present.
 
 PAYMENTS_ENABLED, ANALYTICS_ENABLED and SHEETS_SYNC_ENABLED default to false.
 Change each only after its respective staging and privacy checks. Turn off payments
@@ -74,20 +73,20 @@ payments already initiated.
 - Subscribe to payment.captured, order.paid, payment.failed, refund.processed and refund.failed.
 - Configure automatic capture in Razorpay; an authorized but uncaptured payment is
   not fulfilled by this code.
-- Browser checkout sends only item identifiers, quantity, address/consultation ID,
-  reduced compatibility numbers where applicable, and consent. The server looks
+- Browser checkout accepts only physical-product identifiers and address details or
+  reduced compatibility numbers for the ₹99 report, plus consent. The server looks
   up price, generates paid-report content, and creates the provider order.
 - Verification checks HMAC, authenticated ownership, provider capture status, order
   ID, amount and currency. Database fulfilment and paid status commit atomically.
 - Completed webhook replay is ignored. Simultaneous callbacks are serialized by
   the ledger row lock. Failed attempts do not overwrite a captured payment.
-- Payment received after a slot expires is flagged for human reschedule/refund;
-  it never steals another customer's slot. Check raw_status in the payment report.
-- Customer consultation cancellation applies the published 75% / 50% / 25% / 0%
-  schedule from server time, frees the slot atomically, and initiates the eligible
-  amount to the original payment. Full and partial refunds are recorded from signed
-  provider webhooks. The admin can reconcile/retry a request or create an audited
-  operator refund for an approved duplicate payment, SIAOS cancellation, or legal remedy.
+- Razorpay is not used for consultation checkout. The booking API converts the short
+  hold into a durable `requested` appointment before the customer is redirected to
+  WhatsApp. An MFA-protected calendar action records the direct payment reference and
+  confirms the appointment. The same view calculates and tracks direct refunds under
+  the published time tiers; the operator records the transfer reference after payment.
+- Historical Razorpay consultation transactions remain readable so prior payments and
+  refunds can still be reconciled safely.
 - If provider order creation succeeds but a subsequent write fails, the checkout
   intent stays locked. Reconcile by receipt in Razorpay; do not blindly create a
   replacement payment. This recovery currently requires an operator.
@@ -108,7 +107,7 @@ The application manages these reserved tabs in the dedicated spreadsheet:
 | SIAOS_orders | Items, delivery details, payment/dispatch status |
 | SIAOS_payments | Gateway references, amount, currency, capture/refund status |
 | SIAOS_refunds | Cancellation/operator requests, policy percentage, eligible amount and provider status |
-| SIAOS_catalog | Server-approved product, report and consultation prices |
+| SIAOS_catalog | Server-approved product/report prices and inactive historical consultation prices |
 | SIAOS_visitors | Consented anonymous events, path, device and referrer domain |
 | SIAOS_readings | Reading history metadata, not private reading content |
 | SIAOS_reports | Purchase and report access history |

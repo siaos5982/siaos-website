@@ -27,11 +27,11 @@ export function consultationInput(body) {
   requireValue(['on','true'].includes(details.disclaimerAccepted), 'Consent is required.');
   const required = {
     kundli:['fullName','dateOfBirth','birthCity','birthState','birthCountry','birthHour','birthMinute','birthPeriod','phone','whatsapp','currentCity','currentState','currentCountry','consultationMode'],
-    numerology:['legalName','dateOfBirth','ownedPhoneNumbers','consultationMode'],
-    vastu:['propertyStatus','propertyType','analysisMode','phone'],
-    tarot:['fullName','dateOfBirth','consultationMode'],
-    face:['fullName','dateOfBirth','phone','currentCity','currentState','currentCountry','consultationMode'],
-    paranormal:['fullName','phone','currentCity','currentState','currentCountry']
+    numerology:['legalName','dateOfBirth','ownedPhoneNumbers','phone','whatsapp','consultationMode'],
+    vastu:['fullName','propertyStatus','propertyType','analysisMode','phone','whatsapp','consultationMode'],
+    tarot:['fullName','dateOfBirth','phone','whatsapp','consultationMode'],
+    face:['fullName','dateOfBirth','phone','whatsapp','currentCity','currentState','currentCountry','consultationMode'],
+    paranormal:['fullName','phone','whatsapp','currentCity','currentState','currentCountry','consultationMode']
   };
   requireValue(required[body.service].every(key => details[key]), 'Complete all required consultation details.');
   if (details.dateOfBirth) requireValue(/^\d{4}-\d{2}-\d{2}$/.test(details.dateOfBirth) && Number.isFinite(Date.parse(details.dateOfBirth)) && new Date(details.dateOfBirth).toISOString().slice(0,10)===details.dateOfBirth && Date.parse(details.dateOfBirth) <= Date.now(), 'Enter a valid date of birth.');
@@ -40,14 +40,10 @@ export function consultationInput(body) {
 export function checkoutInput(body) {
   requireValue(body.consentAccepted === true, 'Purchase and data-processing consent is required.');
   requireValue(uuid(body.requestId), 'A checkout request ID is required.');
-  requireValue(['product','consultation','report'].includes(body.kind), 'This purchase type is not available yet.');
+  requireValue(['product','report'].includes(body.kind), 'Online payment is available only for products and the ₹99 compatibility report.');
   requireValue(typeof body.slug === 'string' && /^[a-z0-9-]{1,80}$/.test(body.slug), 'Invalid item.');
   requireValue(Number.isInteger(body.quantity) && body.quantity >= 1 && body.quantity <= 10, 'Quantity must be from 1 to 10.');
   requireValue(typeof body.variant === 'string' && body.variant.length <= 100, 'Choose a valid option.');
-  if (body.kind === 'consultation') {
-    requireValue(uuid(body.consultationId) && body.quantity === 1, 'Choose a saved consultation.');
-    return {requestId:body.requestId,kind:body.kind,slug:body.slug,quantity:1,variant:body.variant,consultationId:body.consultationId,consentAccepted:true};
-  }
   if (body.kind === 'report') {
     requireValue(body.slug === 'compatibility-report' && body.variant === '15-day-access' && body.quantity === 1, 'Choose a valid report.');
     const values=body.reportNumbers||{};const reportNumbers={};
@@ -101,10 +97,22 @@ export function cancellationInput(body) {
   requireValue(typeof (body.reason ?? '') === 'string' && (body.reason ?? '').trim().length <= 500, 'Cancellation reason is too long.');
   return {appointmentId:body.appointmentId,reason:(body.reason ?? '').trim()};
 }
+export function consultationConfirmationInput(body) {
+  requireValue(uuid(body.appointmentId), 'Choose a valid appointment.');
+  requireValue(Number.isInteger(body.amount) && body.amount > 0 && body.amount <= 100000000, 'Enter the received consultation amount in paise.');
+  requireValue(typeof body.method === 'string' && body.method.trim().length >= 2 && body.method.trim().length <= 50, 'Enter the direct payment method.');
+  requireValue(typeof body.reference === 'string' && body.reference.trim().length >= 2 && body.reference.trim().length <= 120, 'Enter the direct payment reference.');
+  return {appointmentId:body.appointmentId,amount:body.amount,method:body.method.trim(),reference:body.reference.trim()};
+}
+export function directRefundInput(body) {
+  requireValue(uuid(body.appointmentId), 'Choose a valid appointment.');
+  requireValue(typeof body.reference === 'string' && body.reference.trim().length >= 2 && body.reference.trim().length <= 120, 'Enter the direct refund reference.');
+  return {appointmentId:body.appointmentId,reference:body.reference.trim()};
+}
 export function catalogInput(body) {
-  requireValue(['product','consultation'].includes(body.kind), 'Choose a valid catalogue type.');
+  requireValue(body.kind === 'product', 'Only physical products can be added to the online payment catalogue.');
   requireValue(typeof body.slug === 'string' && /^[a-z0-9-]{1,80}$/.test(body.slug), 'Enter a valid catalogue slug.');
-  requireValue(typeof body.variant === 'string' && body.variant.trim().length > 0 && body.variant.trim().length <= 160, 'Enter the exact product or consultation option.');
+  requireValue(typeof body.variant === 'string' && body.variant.trim().length > 0 && body.variant.trim().length <= 160, 'Enter the exact product option.');
   requireValue(typeof body.name === 'string' && body.name.trim().length > 0 && body.name.trim().length <= 160, 'Enter a catalogue name.');
   requireValue(Number.isInteger(body.unitAmount) && body.unitAmount > 0 && body.unitAmount <= 100000000, 'Enter a valid price in paise.');
   requireValue(Number.isInteger(body.shippingAmount) && body.shippingAmount >= 0 && body.shippingAmount <= 10000000, 'Enter a valid delivery charge in paise.');

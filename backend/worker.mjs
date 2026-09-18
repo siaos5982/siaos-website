@@ -1,4 +1,4 @@
-import {HttpError,requireValue,uuid,consultationInput,checkoutInput,cancellationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
+import {HttpError,requireValue,uuid,consultationInput,checkoutInput,cancellationInput,consultationConfirmationInput,directRefundInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
 import {syncSheets,REPORTS} from './sheets.mjs';
 
 export function database(env) {
@@ -62,15 +62,7 @@ async function createCheckout(body,user,db,env){
     return {key:env.RAZORPAY_KEY_ID,orderId:saved.gateway_order_id,amount:saved.amount,currency:saved.currency,name:saved.item_name,status:saved.status};
   }
   const [price]=await db(`catalog_prices?kind=eq.${input.kind}&slug=eq.${eq(input.slug)}&variant=eq.${eq(input.variant)}&active=is.true&limit=1`);
-  requireValue(price&&Number.isSafeInteger(Number(price.unit_amount)),'This item or consultation does not have an approved online price yet.',409);
-  if(input.kind==='consultation'){
-    const [c]=await db(`consultation_requests?id=eq.${input.consultationId}&user_id=eq.${user.id}&limit=1`);
-    requireValue(c&&c.service===input.slug&&c.related_service===input.variant,'Consultation not found.',404);
-    const [a]=await db(`appointments?id=eq.${c.appointment_id}`);
-    requireValue(a?.status==='held'&&Date.parse(a.hold_expires_at)>Date.now()+30000,'Your reservation expired. Choose another time.',409);
-    const paid=await db(`payment_transactions?kind=eq.consultation&metadata->>consultationId=eq.${c.id}&status=in.(created,authorized,paid)&limit=1`);
-    requireValue(!paid.length,'A payment attempt already exists for this consultation. Use the existing checkout or contact support.',409);
-  }
+  requireValue(price&&Number.isSafeInteger(Number(price.unit_amount)),'This product or report does not have an approved online price yet.',409);
   const amount=Number(price.unit_amount)*input.quantity+Number(price.shipping_amount);
   requireValue(Number.isSafeInteger(amount)&&amount>0&&amount<=100000000,'Invalid order amount.');
   await db('checkout_intents',{method:'POST',body:{id:input.requestId,user_id:user.id,request:input}});
@@ -79,7 +71,7 @@ async function createCheckout(body,user,db,env){
   // Never issue another provider order for the same request ID.
   const order=await gateway(env,'orders',{method:'POST',body:{amount,currency:'INR',receipt,notes:{checkout_request:input.requestId}}});
   requireValue(order.id&&order.amount===amount&&order.currency==='INR','Unexpected payment provider response.',502);
-  const metadata={variant:input.variant,address:input.address||{},consultationId:input.consultationId||null,shippingAmount:Number(price.shipping_amount),requestId:input.requestId};
+  const metadata={variant:input.variant,address:input.address||{},shippingAmount:Number(price.shipping_amount),requestId:input.requestId};
   if(input.kind==='report')metadata.reportPayload=compatibilityPaidReport(input.reportNumbers);
   const [saved]=await db('payment_transactions',{method:'POST',body:{user_id:user.id,gateway:'razorpay',gateway_order_id:order.id,receipt,kind:input.kind,item_slug:input.slug,item_name:price.name,quantity:input.quantity,amount,currency:'INR',metadata}});
   await db(`checkout_intents?id=eq.${input.requestId}`,{method:'PATCH',body:{state:'ready',transaction_id:saved.id}});
@@ -201,6 +193,12 @@ export default {
           const value=catalogInput(await jsonBody(request));
           const rows=await db('catalog_prices?on_conflict=kind,slug,variant',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:value});
           await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'catalog_price_saved',target:`${value.kind}:${value.slug}:${value.variant}`}});result={row:rows[0]};
+        }else if(request.method==='POST'&&/^\/api\/admin\/consultations\/[0-9a-f-]{36}\/confirm$/i.test(path)){
+          const appointmentId=path.split('/')[4];const value=consultationConfirmationInput({...await jsonBody(request),appointmentId});
+          result=await rpc(db,'confirm_whatsapp_consultation',{p_appointment_id:value.appointmentId,p_amount:value.amount,p_method:value.method,p_reference:value.reference,p_admin_user_id:user.id});
+        }else if(request.method==='POST'&&/^\/api\/admin\/consultations\/[0-9a-f-]{36}\/direct-refund$/i.test(path)){
+          const appointmentId=path.split('/')[4];const value=directRefundInput({...await jsonBody(request),appointmentId});
+          result=await rpc(db,'record_direct_consultation_refund',{p_appointment_id:value.appointmentId,p_reference:value.reference,p_admin_user_id:user.id});
         }else if(request.method==='POST'&&path==='/api/admin/refunds'){
           const value=operatorRefundInput(await jsonBody(request));
           const created=await rpc(db,'create_operator_refund',{p_transaction_id:value.transactionId,p_amount:value.amount,p_reason:value.reason});

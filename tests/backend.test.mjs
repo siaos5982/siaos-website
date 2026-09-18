@@ -1,13 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import vm from 'node:vm';
-import {consultationInput,checkoutInput,cancellationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
+import {consultationInput,checkoutInput,cancellationInput,consultationConfirmationInput,directRefundInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
 import {sheetRows} from '../backend/sheets.mjs';
 import worker from '../backend/worker.mjs';
 
 const id='22222222-2222-4222-8222-222222222222';
-const booking={appointmentId:id,service:'tarot',relatedService:'Single Question Reading',details:{fullName:'Test User',dateOfBirth:'1990-01-01',consultationMode:'On-call consultation',disclaimerAccepted:'on'}};
+const booking={appointmentId:id,service:'tarot',relatedService:'Single Question Reading',details:{fullName:'Test User',dateOfBirth:'1990-01-01',phone:'9999999999',whatsapp:'9999999999',consultationMode:'On-call consultation',disclaimerAccepted:'on'}};
 const order={requestId:id,kind:'product',slug:'clear-quartz-bracelet',variant:'M · 7 in',quantity:1,consentAccepted:true,address:{name:'Test',phone:'9999999999',line1:'Test street',city:'Surat',state:'Gujarat',postalCode:'395001',country:'India'}};
 test('consultations accept expected submitted fields',()=>assert.equal(consultationInput(booking).serviceName,'Tarot Reading'));
 test('consultations reject missing consent',()=>assert.throws(()=>consultationInput({...booking,details:{...booking.details,disclaimerAccepted:''}})));
@@ -21,9 +20,10 @@ test('checkout rejects fractional and excessive quantities',()=>{for(const quant
 test('paid report checkout accepts only the fixed report and four reduced numbers',()=>{const value=checkoutInput({...order,kind:'report',slug:'compatibility-report',variant:'15-day-access',quantity:1,reportNumbers:{yourMulank:1,yourBhagyank:2,partnerMulank:3,partnerBhagyank:4}});assert.equal(value.reportNumbers.partnerBhagyank,4);assert.throws(()=>checkoutInput({...order,kind:'report',slug:'compatibility-report',variant:'15-day-access',reportNumbers:{yourMulank:10}}));});
 test('paid compatibility report is generated server-side from reduced numbers',()=>{const value=compatibilityPaidReport({yourMulank:1,yourBhagyank:2,partnerMulank:3,partnerBhagyank:4});assert.equal(value.sections.length,8);assert.match(value.introduction,/% compatibility pattern/);assert.equal(value.numbers.partnerMulank,3);});
 test('product checkout requires a real address',()=>assert.throws(()=>checkoutInput({...order,address:{}})));
-test('consultation requires saved request ID and single quantity',()=>{assert.throws(()=>checkoutInput({...order,kind:'consultation',quantity:2}));assert.equal(checkoutInput({...order,kind:'consultation',consultationId:id}).consultationId,id);});
+test('consultations cannot enter Razorpay checkout',()=>assert.throws(()=>checkoutInput({...order,kind:'consultation',consultationId:id})));
 test('cancellation accepts only a UUID and a bounded reason',()=>{assert.deepEqual(cancellationInput({appointmentId:id,reason:'  Schedule changed  '}),{appointmentId:id,reason:'Schedule changed'});assert.throws(()=>cancellationInput({appointmentId:'fake'}));assert.throws(()=>cancellationInput({appointmentId:id,reason:'x'.repeat(501)}));});
-test('catalogue prices use integer paise and exact variants',()=>{assert.equal(catalogInput({kind:'consultation',slug:'tarot',variant:'Single Question Reading',name:'Tarot',unitAmount:110000,shippingAmount:0,active:true}).unit_amount,110000);assert.throws(()=>catalogInput({kind:'product',slug:'test',variant:'',name:'Test',unitAmount:1.5,shippingAmount:0,active:true}));});
+test('WhatsApp consultation confirmation requires an integer direct payment and references',()=>{const value=consultationConfirmationInput({appointmentId:id,amount:110000,method:' UPI ',reference:' UTR-123 '});assert.equal(value.amount,110000);assert.equal(value.method,'UPI');assert.throws(()=>consultationConfirmationInput({appointmentId:id,amount:0,method:'UPI',reference:'UTR-123'}));assert.equal(directRefundInput({appointmentId:id,reference:' REF-99 '}).reference,'REF-99');});
+test('catalogue allows only product prices with integer paise and exact variants',()=>{assert.equal(catalogInput({kind:'product',slug:'clear-quartz-bracelet',variant:'M',name:'Clear Quartz Bracelet',unitAmount:110000,shippingAmount:0,active:true}).unit_amount,110000);assert.throws(()=>catalogInput({kind:'consultation',slug:'tarot',variant:'Single Question Reading',name:'Tarot',unitAmount:110000,shippingAmount:0,active:true}));assert.throws(()=>catalogInput({kind:'product',slug:'test',variant:'',name:'Test',unitAmount:1.5,shippingAmount:0,active:true}));});
 test('operator refunds require a transaction, integer paise and a clear reason',()=>{assert.equal(operatorRefundInput({transactionId:id,amount:5000,reason:'Duplicate payment'}).amount,5000);assert.throws(()=>operatorRefundInput({transactionId:id,amount:1.5,reason:'Duplicate payment'}));assert.throws(()=>operatorRefundInput({transactionId:id,amount:5000,reason:'bad'}));});
 test('canonical comparison ignores JSON property order recursively',()=>assert.equal(canonical({b:2,a:{z:1,y:2}}),canonical({a:{y:2,z:1},b:2})));
 test('HMAC SHA256 matches a known test vector',async()=>{const s=await hmac('key','The quick brown fox jumps over the lazy dog');assert.equal(s,'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8');assert.ok(equalSignature(s,s));assert.equal(equalSignature(s,'x'.repeat(64)),false);assert.equal(equalSignature(s,s.slice(1)),false);});
@@ -35,12 +35,17 @@ test('API rejects disallowed browser origin',async()=>{const r=await worker.fetc
 test('health does not expose credentials',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health'),{SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,200);assert.ok(!(await r.text()).includes('secret'));});
 test('missing authorization cannot read admin data',async()=>{const r=await worker.fetch(new Request('https://api.test/api/admin/records?type=clients'),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,401);});
 test('invalid webhook signature is rejected before database access',async()=>{const r=await worker.fetch(new Request('https://api.test/api/webhooks/razorpay',{method:'POST',body:'{}',headers:{'x-razorpay-signature':'0'.repeat(64)}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',RAZORPAY_WEBHOOK_SECRET:'test'});assert.equal(r.status,401);});
-test('public hosts reject preview sessions and developer login even when flag is true',async()=>{
+test('public account code contains no OTP bypass or developer login',async()=>{
   const script=await readFile(new URL('../account-store.js',import.meta.url),'utf8');
-  const values=new Map([['siaosDemoAccountV1',JSON.stringify({id:'fake-user'})]]);
-  const storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
-  const context={window:{SIAOS_AUTH_CONFIG:{developerPreviewEnabled:true}},location:{hostname:'siaos.in'},localStorage:storage,sessionStorage:storage,crypto};
-  vm.runInNewContext(script,context);assert.equal(await context.window.SIAOSAccount.getSession(),null);await assert.rejects(()=>context.window.SIAOSAccount.developerLogin());
+  assert.doesNotMatch(script,/developerLogin|demoAccount|123456|siaosDemoAccount/i);
+});
+test('consultation booking saves first and hands the full request to WhatsApp',async()=>{
+  const script=await readFile(new URL('../booking.js',import.meta.url),'utf8');
+  assert.match(script,/SIAOSApi\('consultations'/);
+  assert.match(script,/https:\/\/wa\.me\/919173569555\?text=/);
+  assert.match(script,/Appointment date:/);
+  assert.match(script,/Appointment time:/);
+  assert.doesNotMatch(script,/location\.(?:href|assign)\s*\(?'payment\.html/);
 });
 test('admin allowlist and MFA are independently enforced',async()=>{
   const original=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({id}),{status:200});
@@ -48,6 +53,16 @@ test('admin allowlist and MFA are independently enforced',async()=>{
     const token='header.'+Buffer.from(JSON.stringify({aal})).toString('base64url')+'.signature';
     const r=await worker.fetch(new Request('https://api.test/api/admin/summary',{headers:{Authorization:'Bearer '+token}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',ADMIN_USER_IDS:admin});assert.equal(r.status,403);
   }}finally{globalThis.fetch=original;}
+});
+test('MFA-protected admin can confirm a WhatsApp consultation payment',async()=>{
+  const original=globalThis.fetch,calls=[];const token='header.'+Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url')+'.signature';
+  globalThis.fetch=async(url,options={})=>{calls.push({url:String(url),options});let data;
+    if(String(url).endsWith('/auth/v1/user'))data={id};
+    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
+    else if(String(url).includes('/rpc/confirm_whatsapp_consultation')){const body=JSON.parse(options.body);assert.equal(body.p_amount,110000);assert.equal(body.p_reference,'UTR-123');data={appointmentId:id,status:'confirmed',amount:110000};}
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});};
+  try{const response=await worker.fetch(new Request(`https://api.test/api/admin/consultations/${id}/confirm`,{method:'POST',headers:{Authorization:'Bearer '+token},body:JSON.stringify({amount:110000,method:'UPI',reference:'UTR-123'})}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',ADMIN_USER_IDS:id});assert.equal(response.status,200);assert.equal((await response.json()).status,'confirmed');assert.ok(calls.some(call=>call.url.includes('confirm_whatsapp_consultation')));}finally{globalThis.fetch=original;}
 });
 test('checkout uses database price, not browser amount, and creates a ledger',async()=>{
   const original=globalThis.fetch,calls=[];
