@@ -1,4 +1,4 @@
-import {HttpError,requireValue,uuid,consultationInput,checkoutInput,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
+import {HttpError,requireValue,uuid,consultationInput,checkoutInput,cancellationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
 import {syncSheets,REPORTS} from './sheets.mjs';
 
 export function database(env) {
@@ -79,9 +79,41 @@ async function createCheckout(body,user,db,env){
   // Never issue another provider order for the same request ID.
   const order=await gateway(env,'orders',{method:'POST',body:{amount,currency:'INR',receipt,notes:{checkout_request:input.requestId}}});
   requireValue(order.id&&order.amount===amount&&order.currency==='INR','Unexpected payment provider response.',502);
-  const [saved]=await db('payment_transactions',{method:'POST',body:{user_id:user.id,gateway:'razorpay',gateway_order_id:order.id,receipt,kind:input.kind,item_slug:input.slug,item_name:price.name,quantity:input.quantity,amount,currency:'INR',metadata:{variant:input.variant,address:input.address||{},consultationId:input.consultationId||null,shippingAmount:Number(price.shipping_amount),requestId:input.requestId}}});
+  const metadata={variant:input.variant,address:input.address||{},consultationId:input.consultationId||null,shippingAmount:Number(price.shipping_amount),requestId:input.requestId};
+  if(input.kind==='report')metadata.reportPayload=compatibilityPaidReport(input.reportNumbers);
+  const [saved]=await db('payment_transactions',{method:'POST',body:{user_id:user.id,gateway:'razorpay',gateway_order_id:order.id,receipt,kind:input.kind,item_slug:input.slug,item_name:price.name,quantity:input.quantity,amount,currency:'INR',metadata}});
   await db(`checkout_intents?id=eq.${input.requestId}`,{method:'PATCH',body:{state:'ready',transaction_id:saved.id}});
   return {key:env.RAZORPAY_KEY_ID,orderId:order.id,amount,currency:'INR',name:price.name,status:'created'};
+}
+async function recordRefund(db,env,refund,requestId){
+  const payment=await gateway(env,`payments/${eq(refund.payment_id)}`);
+  requireValue(Number.isSafeInteger(payment.amount_refunded)&&payment.amount_refunded>=refund.amount,'Unexpected refund total from payment provider.',502);
+  return rpc(db,'record_payment_refund',{p_payment:refund.payment_id,p_refund:refund.id,p_refund_amount:refund.amount,p_total_refunded:payment.amount_refunded,p_request_id:requestId||null});
+}
+async function issueRefund(id,db,env){
+  requireValue(uuid(id),'Invalid refund request.');
+  const [request]=await db(`refund_requests?id=eq.${eq(id)}&limit=1`);requireValue(request,'Refund request not found.',404);
+  if(request.status==='processed'||request.status==='not_due')return {id:request.id,status:request.status,amount:request.eligible_amount,refundId:request.gateway_refund_id||null};
+  const [payment]=await db(`payment_transactions?id=eq.${eq(request.transaction_id)}&limit=1`);
+  requireValue(payment?.gateway_payment_id&&payment.status==='paid','Captured payment not available for refund.',409);
+  requireValue(request.eligible_amount>0&&request.eligible_amount<=payment.amount-payment.refunded_amount,'Refund amount requires reconciliation.',409);
+  try{
+    // Always reconcile by our immutable request ID before creating a provider refund.
+    const listed=await gateway(env,`payments/${eq(payment.gateway_payment_id)}/refunds?count=100`);
+    let refund=listed.items?.find(item=>item.notes?.refund_request_id===request.id);
+    if(!refund){
+      const claimed=await rpc(db,'claim_refund_issue',{p_request_id:request.id});
+      if(!claimed)return {id:request.id,status:'processing',amount:request.eligible_amount,refundId:request.gateway_refund_id||null};
+      refund=await gateway(env,`payments/${eq(payment.gateway_payment_id)}/refund`,{method:'POST',body:{amount:request.eligible_amount,speed:'normal',notes:{refund_request_id:request.id,policy_percent:String(request.policy_percent)}}});
+    }
+    requireValue(refund?.id&&refund.payment_id===payment.gateway_payment_id&&refund.amount===request.eligible_amount,'Unexpected refund response.',502);
+    await db(`refund_requests?id=eq.${eq(request.id)}`,{method:'PATCH',body:{gateway_refund_id:refund.id,status:'processing',last_error:null,updated_at:new Date().toISOString()}});
+    if(refund.status==='processed')await recordRefund(db,env,refund,request.id);
+    return {id:request.id,status:refund.status==='processed'?'processed':'processing',amount:request.eligible_amount,refundId:refund.id};
+  }catch(error){
+    await db(`refund_requests?id=eq.${eq(request.id)}`,{method:'PATCH',body:{status:'review_required',last_error:'Provider refund needs operator reconciliation.',updated_at:new Date().toISOString()}}).catch(()=>{});
+    throw error;
+  }
 }
 async function webhook(request,env,db){
   requireValue(env.RAZORPAY_WEBHOOK_SECRET,'Webhook not configured.',503);
@@ -98,9 +130,12 @@ async function webhook(request,env,db){
     await confirmPayment(db,env,p.order_id,p.id);
   }else if(event.event==='refund.processed'){
     const r=event.payload?.refund?.entity;requireValue(r?.payment_id,'Missing refund payload.');
-    const current=await gateway(env,`payments/${eq(r.payment_id)}`);
-    if(current.amount_refunded===current.amount)await rpc(db,'record_full_refund',{p_payment:current.id,p_amount:current.amount});
-    else await db(`payment_transactions?gateway_payment_id=eq.${eq(current.id)}`,{method:'PATCH',body:{raw_status:'partial_refund_requires_review',updated_at:new Date().toISOString()}});
+    requireValue(r.id&&Number.isSafeInteger(r.amount)&&r.amount>0,'Invalid refund payload.');
+    const requestId=uuid(r.notes?.refund_request_id)?r.notes.refund_request_id:null;
+    await recordRefund(db,env,r,requestId);
+  }else if(event.event==='refund.failed'){
+    const r=event.payload?.refund?.entity;requireValue(r?.id,'Missing refund payload.');
+    await db(`refund_requests?gateway_refund_id=eq.${eq(r.id)}`,{method:'PATCH',body:{status:'review_required',last_error:'The payment provider reported a failed refund.',updated_at:new Date().toISOString()}});
   }else if(event.event==='payment.failed'&&p?.order_id){
     await db(`payment_transactions?gateway_order_id=eq.${eq(p.order_id)}&status=in.(created,authorized)`,{method:'PATCH',body:{raw_status:'payment_attempt_failed',updated_at:new Date().toISOString()}});
   }
@@ -132,6 +167,15 @@ export default {
         if(request.method==='POST'&&path==='/api/consultations'){
           const b=consultationInput(await jsonBody(request));
           const c=await rpc(db,'save_consultation',{p_user_id:user.id,p_appointment_id:b.appointmentId,p_service:b.service,p_service_name:b.serviceName,p_related_service:b.relatedService,p_details:b.details});result={id:c.id,status:c.status};
+        }else if(request.method==='GET'&&path==='/api/consultations/refunds'){
+          result={rows:await db(`refund_requests?user_id=eq.${eq(user.id)}&select=id,appointment_id,reason,policy_percent,eligible_amount,gateway_refund_id,status,requested_at,processed_at&order=requested_at.desc&limit=100`)};
+        }else if(request.method==='POST'&&path==='/api/consultations/cancel'){
+          await limited(db,`cancel:${user.id}`,5,300);const b=cancellationInput(await jsonBody(request));
+          const cancelled=await rpc(db,'request_consultation_cancellation',{p_user_id:user.id,p_appointment_id:b.appointmentId,p_reason:b.reason});
+          if(Number(cancelled.eligibleAmount)>0&&cancelled.id){
+            try{result={...cancelled,refund:await issueRefund(cancelled.id,db,env)};}
+            catch{result={...cancelled,status:'review_required',message:'Your appointment is cancelled. The eligible refund is recorded for operator review.'};}
+          }else result=cancelled;
         }else if(request.method==='POST'&&path==='/api/payments/create'){
           await limited(db,`checkout:${user.id}`,5,300);result=await createCheckout(await jsonBody(request),user,db,env);
         }else if(request.method==='POST'&&path==='/api/payments/verify'){
@@ -153,6 +197,18 @@ export default {
           const rows=await db(`${spec.table}?select=${spec.select}&order=${spec.order}&limit=100&offset=${offset}${filter}`);
           await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'view_records',target:name}});
           result={rows,offset,hasMore:rows.length===100};
+        }else if(request.method==='POST'&&path==='/api/admin/catalog'){
+          const value=catalogInput(await jsonBody(request));
+          const rows=await db('catalog_prices?on_conflict=kind,slug,variant',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:value});
+          await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'catalog_price_saved',target:`${value.kind}:${value.slug}:${value.variant}`}});result={row:rows[0]};
+        }else if(request.method==='POST'&&path==='/api/admin/refunds'){
+          const value=operatorRefundInput(await jsonBody(request));
+          const created=await rpc(db,'create_operator_refund',{p_transaction_id:value.transactionId,p_amount:value.amount,p_reason:value.reason});
+          await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'operator_refund_created',target:created.id}});
+          result={...created,refund:await issueRefund(created.id,db,env)};
+        }else if(request.method==='POST'&&/^\/api\/admin\/refunds\/[0-9a-f-]{36}\/issue$/i.test(path)){
+          const id=path.split('/')[4];result=await issueRefund(id,db,env);
+          await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'refund_issue_or_reconcile',target:id}});
         }else if(request.method==='POST'&&path==='/api/admin/sheets-sync'){
           await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'sheets_sync_requested'}});result=await syncSheets(env,db);
         }else throw new HttpError(404,'Endpoint not found.');
