@@ -33,7 +33,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 1. Apply the incremental Supabase migration to staging, then verify every RPC and Row Level Security policy.
 2. Configure production secrets and identifiers listed in `backend/DEPLOYMENT.md`; never commit secret values.
 3. Add verified catalogue prices and Razorpay product/consultation mappings.
-4. Business owner and qualified Indian counsel should review the new customer policies before payments are enabled, particularly the 24-hour consultation cancellation rule, 7-day physical-return request window, and product exclusions.
+4. Business owner and qualified Indian counsel should review the customer policies before payments are enabled. The owner selected consultation refund tiers of 75% at 20+ hours, 50% at 12–under 20 hours, 25% at 5–under 12 hours, and 0% under 5 hours/no-show. Physical products are final sale except for non-waivable consumer-law remedies.
 5. Confirm any applicable tax/GST details and designate the individual grievance officer before production checkout is enabled.
 6. Share the private reporting spreadsheet with the backend Google service account and set its spreadsheet ID.
 7. Complete Razorpay and Supabase production-domain configuration for `siaos.in` and `www.siaos.in`.

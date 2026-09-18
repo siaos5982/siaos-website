@@ -36,3 +36,15 @@ test('commerce policies preserve applicable statutory consumer rights',async()=>
     assert.match(html,/applicable (Indian )?consumer law|rights that cannot lawfully be excluded/i);
   }
 });
+
+test('consultation cancellation schedule matches the approved hour-based tiers',async()=>{
+  const html=await readFile(new URL('../cancellation-policy.html',import.meta.url),'utf8');
+  for(const value of ['75%','20 hours or more','50%','12 to under 20 hours','25%','5 to under 12 hours','0%','Under 5 hours'])assert.ok(html.includes(value),value);
+});
+
+test('physical products are final sale while non-waivable remedies remain',async()=>{
+  const html=await readFile(new URL('../refund-policy.html',import.meta.url),'utf8');
+  assert.match(html,/no voluntary return, refund, replacement, exchange or cancellation/i);
+  assert.match(html,/wrong, defective, damaged, spurious/i);
+  assert.match(html,/cannot lawfully be excluded/i);
+});
