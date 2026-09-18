@@ -19,20 +19,22 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 ## Implemented on this branch
 
 - Cloudflare Worker API with origin checks, bounded request bodies, validation, per-route rate limits, server-side Supabase access, and health endpoint.
-- Razorpay order creation from database-owned prices, HMAC verification, webhook idempotency, and atomic payment fulfilment/refund recording.
+- Razorpay order creation from database-owned prices, HMAC verification, webhook idempotency, atomic payment fulfilment, partial/full refunds, and operator reconciliation.
 - Phone OTP authentication hardening, optional Cloudflare Turnstile support, resend cooldown, and removal of production preview login.
 - Staff dashboard protected by an administrator UUID allowlist and Supabase Authenticator Assurance Level 2 (TOTP).
 - Consultation persistence linked to appointments, payment intents, consent timestamp, account view, and calendar reporting.
-- Private Google Sheets snapshot sync for clients, consultations, calendar, orders, payments, readings, consented anonymous visitor events, and report access.
+- Private Google Sheets snapshot sync for clients, consultations, calendar, orders, payments, refunds, catalogue prices, readings, consented anonymous visitor events, and report access.
 - Explicit analytics consent; only anonymous page/event metadata is accepted. Query strings, full referrers, form contents, OTPs, passwords, payment-card data, and auth tokens are excluded.
 - Backend-owned price catalogue and checkout intent ledger. The browser cannot submit a price.
+- Customer consultation cancellation with server-calculated 75% / 50% / 25% / 0% tiers, automatic original-method refunds, concurrency protection, and an MFA-protected operator refund workflow.
+- Server-generated ₹99 compatibility report fulfilment with database-owned pricing and protected 15-day account access.
 - Automated unit/integration-style tests for validation, authentication boundaries, pricing, signature verification, webhook replay safety, analytics minimisation, and exports.
 
 ## Launch blockers
 
 1. Apply the incremental Supabase migration to staging, then verify every RPC and Row Level Security policy.
 2. Configure production secrets and identifiers listed in `backend/DEPLOYMENT.md`; never commit secret values.
-3. Add verified catalogue prices and Razorpay product/consultation mappings.
+3. Enter and approve consultation subtype prices in the MFA-protected catalogue. Published product prices and the ₹99 compatibility report are seeded by migration.
 4. Business owner and qualified Indian counsel should review the customer policies before payments are enabled. The owner selected consultation refund tiers of 75% at 20+ hours, 50% at 12–under 20 hours, 25% at 5–under 12 hours, and 0% under 5 hours/no-show. Physical products are final sale except for non-waivable consumer-law remedies.
 5. Confirm any applicable tax/GST details and designate the individual grievance officer before production checkout is enabled.
 6. Share the private reporting spreadsheet with the backend Google service account and set its spreadsheet ID.
@@ -41,13 +43,12 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 
 ## Known product gaps
 
-- The ₹99 compatibility report remains blocked because no server-side paid report generator/fulfilment path exists yet.
 - Existing ratings and review counts are static catalogue content, not verified customer reviews. They should not be represented as customer evidence until a moderated review system and source records exist.
 - Google Sheets is an operational reporting mirror, not the system of record. Supabase remains authoritative.
 
 ## Verification
 
-- `npm test`: 26 passing tests.
+- `npm test`: 39 passing tests.
 - `node --check`: backend worker and Sheets integration parse successfully.
 - `git diff --check`: no whitespace errors.
 - Repository audit: no duplicate HTML IDs detected and all six footer policy/contact references now resolve.
