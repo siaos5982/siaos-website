@@ -9,17 +9,14 @@
     if(!session?.access_token||session.demo){
       checkout.innerHTML='<h2>Verified sign-in required</h2><p>Please sign in before payment.</p><a class="btn fill" href="login.html?mode=signin&next='+encodeURIComponent('payment.html'+location.search)+'">Sign in</a>';return;
     }
-    if(productSlug==='compatibility-report'){
-      summary.innerHTML='<h2>Compatibility report</h2><p>The paid report is not available for purchase yet. No payment will be taken until its secure delivery is ready.</p>';
-      checkout.innerHTML='<a class="btn" href="compatibility-report.html">Return to your preview</a>';return;
-    }
-    const product=productSlug?json(localStorage,'siaosPendingProduct'):null;
+    const report=productSlug==='compatibility-report'?json(sessionStorage,'siaosCompatibility'):null;
+    const product=productSlug&&productSlug!=='compatibility-report'?json(localStorage,'siaosPendingProduct'):null;
     const booking=productSlug?null:json(sessionStorage,'siaosBooking');
-    if(productSlug?(!product||product.slug!==productSlug):!booking?.consultationId){
-      checkout.innerHTML='<h2>No saved checkout found</h2><a class="btn" href="'+(productSlug?'products.html':'booking.html')+'">Start again</a>';return;
+    if(productSlug==='compatibility-report'?(!report||![report.yourMulank,report.yourBhagyank,report.partnerMulank,report.partnerBhagyank].every(n=>Number.isInteger(n)&&n>=1&&n<=9)):productSlug?(!product||product.slug!==productSlug):!booking?.consultationId){
+      checkout.innerHTML='<h2>No saved checkout found</h2><a class="btn" href="'+(productSlug==='compatibility-report'?'compatibility-report.html':productSlug?'products.html':'booking.html')+'">Start again</a>';return;
     }
-    const selection=product?{kind:'product',slug:product.slug,variant:product.size||'Standard',quantity:Number(product.quantity||1)}:{kind:'consultation',slug:booking.service,variant:booking.relatedService,quantity:1,consultationId:booking.consultationId};
-    summary.innerHTML='<h2>'+escape(product?.name||booking?.serviceName)+'</h2><p>'+escape(selection.variant)+' · Quantity '+selection.quantity+'</p><p>The final price is calculated by the secure server. Please check the amount displayed in Razorpay before authorising payment.</p>';
+    const selection=report?{kind:'report',slug:'compatibility-report',variant:'15-day-access',quantity:1,reportNumbers:{yourMulank:report.yourMulank,yourBhagyank:report.yourBhagyank,partnerMulank:report.partnerMulank,partnerBhagyank:report.partnerBhagyank}}:product?{kind:'product',slug:product.slug,variant:product.size||'Standard',quantity:Number(product.quantity||1)}:{kind:'consultation',slug:booking.service,variant:booking.relatedService,quantity:1,consultationId:booking.consultationId};
+    summary.innerHTML='<h2>'+escape(report?'Complete Compatibility Report':product?.name||booking?.serviceName)+'</h2><p>'+escape(report?'Protected access for 15 days':selection.variant+' · Quantity '+selection.quantity)+'</p><p>The final price is calculated by the secure server. Please check the amount displayed in Razorpay before authorising payment.</p>';
     const address=product?'<fieldset><legend>Delivery address · India</legend>'+[['name','Recipient name','name'],['phone','Phone number','tel'],['line1','Address line 1','address-line1'],['line2','Address line 2 (optional)','address-line2'],['city','City','address-level2'],['state','State','address-level1'],['postalCode','PIN code','postal-code']].map(([name,label,auto])=>'<label>'+label+'<input name="'+name+'" autocomplete="'+auto+'" maxlength="200" '+(name==='line2'?'':'required')+'></label>').join('')+'</fieldset>':'';
     checkout.innerHTML='<form id="checkoutForm" class="form">'+address+'<label><input name="purchaseConsent" type="checkbox" required> I agree to the published purchase policies and the processing of my order details in the restricted SIAOS dashboard and operational Google Sheets.</label><button class="btn fill" type="submit">Continue to secure payment</button></form><p id="checkoutStatus" role="status" aria-live="polite"></p><p>No card number or OTP is stored by SIAOS. Keep this page open until verification finishes.</p><a class="btn" href="account.html">My Account</a>';
     const form=$('checkoutForm'),button=form.querySelector('button'),status=$('checkoutStatus');
@@ -42,7 +39,7 @@
             button.disabled=true;status.textContent='Verifying your payment…';
             try{
               const verified=await window.SIAOSApi('payments/verify',{method:'POST',body:{orderId:order.orderId,paymentId:result.razorpay_payment_id,signature:result.razorpay_signature}});
-              status.textContent=verified.status==='paid'?(verified.requiresReview?'Payment received. Your reserved time expired; SIAOS must arrange a new time or refund.':'Payment verified. Your purchase is saved in My Account.'):'Payment is processing. Check My Account shortly; do not pay again.';
+              status.textContent=verified.status==='paid'?(verified.requiresReview?'Payment received. Your reserved time expired; SIAOS must arrange a new time or refund.':'Payment verified. Your purchase is saved in My Account'+(verified.reportId?' and the report is ready.':'.')):'Payment is processing. Check My Account shortly; do not pay again.';
             }catch(error){status.textContent=error.message+' If money was deducted, do not pay again. Contact SIAOS with your Razorpay reference.';}
           }
         });
