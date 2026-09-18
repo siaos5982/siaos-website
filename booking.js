@@ -7,8 +7,7 @@ const services = {
   paranormal: 'Paranormal Consultation'
 };
 
-// Paste the deployed Google Apps Script web-app URL here.
-const GOOGLE_SHEETS_WEB_APP_URL = '';
+// Client data is saved through the authenticated backend; Sheets sync is server-side.
 
 const relatedServices = {
   kundli: ['Complete Birth Chart Analysis','Marriage and Compatibility','Career and Wealth Guidance','Health Indicators','Dasha and Transit Timing','Personalised Remedies'],
@@ -37,8 +36,8 @@ const bookingMax=`${bookingLimitDate.getFullYear()}-${String(bookingLimitDate.ge
 function locationFields(prefix, legend) {
   return `<fieldset class="location-fields full"><legend>${legend}</legend>
     <label>City *<input name="${prefix}City" data-city data-prefix="${prefix}" list="cityOptions" autocomplete="off" placeholder="Start typing, for example Su" required></label>
-    <label>State *<input name="${prefix}State" data-state-for="${prefix}" readonly required></label>
-    <label>Country *<input name="${prefix}Country" data-country-for="${prefix}" readonly required></label>
+    <label>State *<input name="${prefix}State" data-state-for="${prefix}" required></label>
+    <label>Country *<input name="${prefix}Country" data-country-for="${prefix}" required></label>
   </fieldset>`;
 }
 
@@ -51,7 +50,7 @@ function consultationMode() {
 
 function consent() {
   return `<fieldset class="appointment-picker full"><legend>Select appointment *</legend><label>Appointment date<input id="appointmentDate" name="appointmentDate" type="date" min="${today}" max="${bookingMax}" required></label><div><span class="appointment-slot-label">Available timings</span><div id="appointmentSlots" class="appointment-slots"><p>Select a date to view available appointments.</p></div><small id="appointmentStatus" class="appointment-status">Monday–Saturday · Appointments can be booked up to one month ahead.</small></div></fieldset><div class="consent full">
-    <label><input type="checkbox" name="disclaimerAccepted" required><span>I confirm that the information I have provided is accurate. I understand that SIAOS does not guarantee that any consultation, guidance or astrological remedy will produce 100% results. SIAOS recommends the astrological remedy considered most suitable for my circumstances, with the intention of providing guidance and possible relief; individual results may vary. These services do not replace medical, legal, financial or other licensed professional advice. I consent to SIAOS using my details only to arrange and provide my requested consultation.</span></label>
+    <label><input type="checkbox" name="disclaimerAccepted" required><span>I confirm that the information I have provided is accurate. I understand that SIAOS does not guarantee that any consultation, guidance or astrological remedy will produce 100% results. SIAOS recommends the astrological remedy considered most suitable for my circumstances, with the intention of providing guidance and possible relief; individual results may vary. These services do not replace medical, legal, financial or other licensed professional advice. I consent to secure storage of my submitted details to arrange my consultation, including in SIAOS’s restricted admin dashboard and operational Google Sheets.</span></label>
   </div>
   <button class="btn fill full payment-next" type="submit" disabled>Proceed to Payment</button>`;
 }
@@ -65,7 +64,7 @@ async function initialiseAppointmentPicker(form){
     if(!dateInput.value||chosen.getDay()===0){slotsTarget.innerHTML='<p>Appointments are unavailable on Sundays. Please select Monday–Saturday.</p>';return;}
     let slots=[];let preview=false;
     try{const session=await window.SIAOSAccount?.getSession();if(!window.SIAOSAccount?.client||session?.demo){slots=previewSlots(dateInput.value);preview=true;}else{const {data,error}=await window.SIAOSAccount.client.rpc('available_appointment_slots',{p_date:dateInput.value});if(error)throw error;slots=data||[];}}
-    catch(error){slotsTarget.innerHTML=`<p>${error.message||'Availability could not be loaded.'}</p>`;return;}
+    catch(error){slotsTarget.textContent=error.message||'Availability could not be loaded.';return;}
     slotsTarget.innerHTML=slots.length?slots.map((slot,index)=>`<label class="appointment-slot"><input type="radio" name="appointmentStart" value="${slot.start_at}" ${index===0?'required':''}><span>${slot.label}</span></label>`).join(''):'<p>No appointments remain for this date. Please choose another date.</p>';
     statusTarget.textContent=preview?'Developer preview availability · the selected time will be saved in this browser.':'Live availability · your selection is held for 15 minutes when you continue.';
   });
@@ -190,43 +189,23 @@ function renderForm(service) {
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!form.reportValidity() || !consentBox.checked) return;
-    const details = Object.fromEntries(new FormData(form).entries());
-    const session=await window.SIAOSAccount?.getSession();
-    let appointmentId=`preview-${Date.now()}`;
-    if(window.SIAOSAccount?.client&&!session?.demo){const {data,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});if(error){alert(error.message||'This appointment is no longer available. Please select another time.');return;}appointmentId=data;}
-    const booking = {service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
-    sessionStorage.setItem('siaosBooking', JSON.stringify(booking));
-
-    const backendUrl = String(window.SIAOS_AUTH_CONFIG?.backendUrl || '').replace(/\/$/,'');
-    if (!backendUrl && !GOOGLE_SHEETS_WEB_APP_URL && !window.SIAOSAccount?.client && !session?.demo) {
-      alert('The secure booking service is not configured yet.');
-      return;
-    }
-
-    proceed.disabled = true;
-    const originalLabel = proceed.textContent;
-    proceed.textContent = 'Saving your details…';
-
+    proceed.disabled=true;
+    proceed.textContent='Saving your details…';
     try {
-      if (backendUrl) {
-        const response = await fetch(`${backendUrl}/api/consultations`, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json','Authorization':`Bearer ${session?.access_token || ''}`},
-          body: JSON.stringify(booking)
-        });
-        if (!response.ok) throw new Error((await response.json().catch(()=>({}))).error || 'The booking could not be saved.');
-      } else if (GOOGLE_SHEETS_WEB_APP_URL) {
-        await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
-          method: 'POST', mode: 'no-cors',
-          headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(booking)
-        });
-      }
-      location.href = 'payment.html';
-    } catch (error) {
-      console.error('Google Sheets submission failed:', error);
-      alert('We could not save your details. Please check your connection and try again.');
-      proceed.disabled = false;
-      proceed.textContent = originalLabel;
+      const details=Object.fromEntries(new FormData(form).entries());
+      const session=await window.SIAOSAccount?.getSession();
+      if(!session?.access_token || session.demo || !window.SIAOS_AUTH_CONFIG?.backendUrl) throw new Error('Verified login and the secure booking backend must be configured before booking.');
+      const {data:appointmentId,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});
+      if(error)throw error;
+      const booking={service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
+      const saved=await window.SIAOSApi('consultations',{method:'POST',body:booking});
+      booking.consultationId=saved.id;
+      sessionStorage.setItem('siaosBooking',JSON.stringify(booking));
+      location.href='payment.html';
+    } catch(error) {
+      alert(error.message||'We could not save your details. Please try again.');
+      proceed.disabled=false;
+      proceed.textContent='Proceed to Payment';
     }
   });
 

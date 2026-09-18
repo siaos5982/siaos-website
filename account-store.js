@@ -15,7 +15,7 @@
   const writeJson = (storage,key,value) => storage.setItem(key,JSON.stringify(value));
   const normalisePhone = (countryCode,phone) => `+${String(countryCode || '').replace(/\D/g,'')}${String(phone || '').replace(/\D/g,'')}`;
   const makeId = prefix => `${prefix}-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
-  const demoAccount = () => readJson(localStorage,keys.demoAccount,null);
+  const demoAccount = () => isLocalPreview ? readJson(localStorage,keys.demoAccount,null) : null;
   const notify = session => listeners.forEach(listener => listener(session));
 
   async function getSession() {
@@ -28,13 +28,13 @@
     return account ? {user:{id:account.id,phone:account.phone,email:account.email,user_metadata:{full_name:account.fullName}},demo:true} : null;
   }
 
-  async function sendOtp({countryCode,phone,mode='signup'}) {
+  async function sendOtp({countryCode,phone,mode='signup',captchaToken}) {
     const fullPhone = normalisePhone(countryCode,phone);
-    if (fullPhone.length < 8) throw new Error('Enter a valid phone number.');
+    if (!/^\+[1-9]\d{7,14}$/.test(fullPhone)) throw new Error('Enter a valid international phone number.');
     sessionStorage.setItem(keys.pendingPhone,fullPhone);
     sessionStorage.setItem(keys.pendingCountryCode,String(countryCode || '').replace(/\D/g,''));
     if (client) {
-      const {error} = await client.auth.signInWithOtp({phone:fullPhone,options:{shouldCreateUser:mode !== 'signin'}});
+      const {error} = await client.auth.signInWithOtp({phone:fullPhone,options:{shouldCreateUser:mode !== 'signin',captchaToken}});
       if (error) throw error;
       return {phone:fullPhone};
     }
@@ -97,7 +97,7 @@
   }
 
   async function developerLogin() {
-    if (!config.developerPreviewEnabled) throw new Error('Developer preview login is disabled.');
+    if (!isLocalPreview || !config.developerPreviewEnabled) throw new Error('Developer preview login is disabled.');
     const existing=demoAccount();
     const account={id:existing?.id||'siaos-developer-preview',phone:existing?.phone||'+910000000000',countryCode:'91',fullName:'SIAOS Developer',email:existing?.email||'',marketingOptIn:false,developerPreview:true,createdAt:existing?.createdAt||new Date().toISOString()};
     writeJson(localStorage,keys.demoAccount,account);
@@ -204,7 +204,16 @@
     if (client) {
       const {error} = await client.auth.signOut();
       if (error) throw error;
-    } else localStorage.removeItem(keys.demoAccount);
+    }
+    localStorage.removeItem(keys.demoAccount);
+    localStorage.removeItem(keys.backlog);
+    sessionStorage.removeItem(keys.pendingPhone);
+    sessionStorage.removeItem(keys.pendingCountryCode);
+    sessionStorage.removeItem('siaosBooking');
+    sessionStorage.removeItem('siaosCheckoutIntent');
+    sessionStorage.removeItem('siaosCompatibility');
+    sessionStorage.removeItem('siaosTarotReport');
+    localStorage.removeItem('siaosTarotDailyDrawV2');
     notify(null);
   }
 

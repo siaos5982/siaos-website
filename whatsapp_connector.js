@@ -1,6 +1,7 @@
 
 (function () {
-  var phone = "+919173569555";
+  if (document.querySelector('.whatsapp-float')) return;
+  var phone = "919173569555";
   var message = "Hi, I would like to know more about your services";
 
   var link = document.createElement("a");

@@ -46,6 +46,7 @@
           </div>
           <label id="marketingConsent" class="auth-check"><input id="authMarketing" type="checkbox"> <span>Email me occasional SIAOS announcements, new articles and event updates. <b>Optional</b></span></label>
           <label id="termsConsent" class="auth-check required"><input id="authTerms" type="checkbox" required> <span>I agree to the account terms and understand that purchased digital reports remain accessible for 15 days.</span></label>
+          <div id="otpCaptcha"></div>
           <button class="btn fill auth-submit" type="submit">Send OTP</button>
         </form>
         <div id="developerAccess" class="developer-access" hidden><span>Website testing</span><button id="developerLogin" class="btn" type="button">Enter Developer Preview</button><small>No OTP required. This private preview can be disabled when the live website launches.</small></div>
@@ -55,6 +56,7 @@
         <p>We sent an OTP to <strong id="otpPhone"></strong>.</p>
         <form id="otpForm" class="auth-form"><label>One-time password<input id="authOtp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required></label><button class="btn fill auth-submit" type="submit">Verify & Continue</button></form>
         <button id="changePhone" class="auth-text-button" type="button">Change phone number</button>
+        <button id="resendOtp" class="auth-text-button" type="button" disabled>Resend OTP</button>
         <p id="demoOtpHint" class="demo-otp-hint" hidden>Local preview code: <strong>123456</strong></p>
       </div>
       <p id="authStatus" class="auth-status" role="status" aria-live="polite"></p>
