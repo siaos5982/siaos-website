@@ -40,13 +40,21 @@ export function consultationInput(body) {
 export function checkoutInput(body) {
   requireValue(body.consentAccepted === true, 'Purchase and data-processing consent is required.');
   requireValue(uuid(body.requestId), 'A checkout request ID is required.');
-  requireValue(['product','consultation'].includes(body.kind), 'This purchase type is not available yet.');
+  requireValue(['product','consultation','report'].includes(body.kind), 'This purchase type is not available yet.');
   requireValue(typeof body.slug === 'string' && /^[a-z0-9-]{1,80}$/.test(body.slug), 'Invalid item.');
   requireValue(Number.isInteger(body.quantity) && body.quantity >= 1 && body.quantity <= 10, 'Quantity must be from 1 to 10.');
   requireValue(typeof body.variant === 'string' && body.variant.length <= 100, 'Choose a valid option.');
   if (body.kind === 'consultation') {
     requireValue(uuid(body.consultationId) && body.quantity === 1, 'Choose a saved consultation.');
     return {requestId:body.requestId,kind:body.kind,slug:body.slug,quantity:1,variant:body.variant,consultationId:body.consultationId,consentAccepted:true};
+  }
+  if (body.kind === 'report') {
+    requireValue(body.slug === 'compatibility-report' && body.variant === '15-day-access' && body.quantity === 1, 'Choose a valid report.');
+    const values=body.reportNumbers||{};const reportNumbers={};
+    for(const key of ['yourMulank','yourBhagyank','partnerMulank','partnerBhagyank']){
+      requireValue(Number.isInteger(values[key])&&values[key]>=1&&values[key]<=9,'Complete the compatibility calculation first.');reportNumbers[key]=values[key];
+    }
+    return {requestId:body.requestId,kind:body.kind,slug:body.slug,quantity:1,variant:body.variant,reportNumbers,consentAccepted:true};
   }
   const address = body.address || {};
   const clean = {};
@@ -57,6 +65,57 @@ export function checkoutInput(body) {
   requireValue(['name','phone','line1','city','state','postalCode','country'].every(key => clean[key]), 'Complete the delivery address.');
   requireValue(clean.country === 'India' && /^\d{6}$/.test(clean.postalCode), 'Online product delivery currently supports India only.');
   return {requestId:body.requestId,kind:body.kind,slug:body.slug,quantity:body.quantity,variant:body.variant,address:clean,consentAccepted:true};
+}
+const compatibilityMatrix=[[86,84,88,58,82,67,64,52,91],[84,88,90,62,66,92,86,55,81],[88,90,91,60,86,88,68,59,90],[58,62,60,82,84,64,88,80,66],[82,66,86,84,89,87,70,72,83],[67,92,88,64,87,92,78,68,86],[64,86,68,88,70,78,88,73,82],[52,55,59,80,72,68,73,84,76],[91,81,90,66,83,86,82,76,90]];
+const numberProfiles={
+  1:{gift:'initiative and clarity',need:'respect and constructive independence',practice:'alternate leadership so both people influence shared decisions'},
+  2:{gift:'empathy and cooperation',need:'gentleness and emotional safety',practice:'name feelings calmly before discussing solutions'},
+  3:{gift:'optimism and expression',need:'appreciation and meaningful growth',practice:'turn one shared idea into a small scheduled action'},
+  4:{gift:'persistence and original thinking',need:'stability without control',practice:'write down expectations and review them without blame'},
+  5:{gift:'adaptability and communication',need:'variety with dependable follow-through',practice:'keep important conversations brief, specific and actionable'},
+  6:{gift:'care and harmony',need:'affection and fairly shared responsibility',practice:'check that giving is mutual rather than assumed'},
+  7:{gift:'intuition and reflection',need:'privacy together with trust',practice:'allow quiet processing time and agree when to reconnect'},
+  8:{gift:'discipline and commitment',need:'reliability and visible appreciation',practice:'balance practical planning with regular emotional check-ins'},
+  9:{gift:'courage and emotional honesty',need:'purpose without unnecessary conflict',practice:'pause before responding and resolve one issue at a time'}
+};
+export function compatibilityPaidReport(numbers){
+  const {yourMulank,partnerMulank,yourBhagyank,partnerBhagyank}=numbers;
+  const pair=(a,b)=>compatibilityMatrix[a-1][b-1];
+  const score=Math.round(pair(yourMulank,partnerMulank)*.5+pair(yourBhagyank,partnerBhagyank)*.35+pair(yourMulank,partnerBhagyank)*.075+pair(partnerMulank,yourBhagyank)*.075);
+  const label=score>=85?'Natural harmony':score>=72?'Strong potential':score>=60?'Growth relationship':'Conscious balance needed';
+  const you=numberProfiles[yourMulank],partner=numberProfiles[partnerMulank],yourPath=numberProfiles[yourBhagyank],partnerPath=numberProfiles[partnerBhagyank];
+  return {title:'Complete Mulank & Bhagyank Compatibility Guidance',introduction:`A ${score}% compatibility pattern suggests ${label.toLowerCase()}. Use this as a reflective framework, not a prediction or fixed verdict.`,score,numbers,
+    sections:[
+      {label:'Core strengths',title:'What this pairing can build',copy:`Mulank ${yourMulank} contributes ${you.gift}; Mulank ${partnerMulank} contributes ${partner.gift}. The bond is strongest when neither contribution is treated as more important.`},
+      {label:'Communication plan',title:'Make different styles workable',copy:`You benefit from ${you.need}, while your partner benefits from ${partner.need}. Before a difficult conversation, each person should state one feeling, one need and one realistic request.`},
+      {label:'Conflict reset',title:'A practical repair sequence',copy:`Pause when intensity rises. Return at an agreed time, describe the specific event without labels, acknowledge its effect, then choose one repair action. For this pairing, ${you.practice}; your partner can support the process when you ${partner.practice}.`},
+      {label:'Long-term rhythm',title:`Bhagyank ${yourBhagyank} and ${partnerBhagyank}`,copy:`Your longer-term paths combine ${yourPath.gift} with ${partnerPath.gift}. Discuss money, family, work, health and personal space explicitly instead of assuming that shared affection creates identical priorities.`},
+      {label:'Weekly practice',title:'Twenty minutes of intentional connection',copy:'Once each week, share one appreciation, one pressure you are carrying, one practical request and one enjoyable plan. Keep the conversation free from phones and do not use it to reopen every past disagreement.'},
+      {label:'Thirty-day focus',title:'Build evidence through behaviour',copy:`For 30 days, practise this pairing’s two strongest habits: ${you.practice}, and ${partner.practice}. Review what actually improved rather than judging progress from one difficult day.`},
+      {label:'Healthy boundaries',title:'Compatibility does not replace safety',copy:'Numerology cannot determine whether a relationship is safe or suitable. Mutual consent, honesty, respect and freedom from coercion matter more than any score. Seek qualified support for abuse, mental-health, legal or financial concerns.'},
+      {label:'Closing reflection',title:'Potential is shaped by choices',copy:`The ${score}% score describes a symbolic number pattern. Reliable care, clear boundaries, repair after conflict and shared values remain the meaningful measures of the relationship.`}
+    ]};
+}
+export function cancellationInput(body) {
+  requireValue(uuid(body.appointmentId), 'Choose a valid appointment.');
+  requireValue(typeof (body.reason ?? '') === 'string' && (body.reason ?? '').trim().length <= 500, 'Cancellation reason is too long.');
+  return {appointmentId:body.appointmentId,reason:(body.reason ?? '').trim()};
+}
+export function catalogInput(body) {
+  requireValue(['product','consultation'].includes(body.kind), 'Choose a valid catalogue type.');
+  requireValue(typeof body.slug === 'string' && /^[a-z0-9-]{1,80}$/.test(body.slug), 'Enter a valid catalogue slug.');
+  requireValue(typeof body.variant === 'string' && body.variant.trim().length > 0 && body.variant.trim().length <= 160, 'Enter the exact product or consultation option.');
+  requireValue(typeof body.name === 'string' && body.name.trim().length > 0 && body.name.trim().length <= 160, 'Enter a catalogue name.');
+  requireValue(Number.isInteger(body.unitAmount) && body.unitAmount > 0 && body.unitAmount <= 100000000, 'Enter a valid price in paise.');
+  requireValue(Number.isInteger(body.shippingAmount) && body.shippingAmount >= 0 && body.shippingAmount <= 10000000, 'Enter a valid delivery charge in paise.');
+  requireValue(typeof body.active === 'boolean', 'Choose whether this price is active.');
+  return {kind:body.kind,slug:body.slug,variant:body.variant.trim(),name:body.name.trim(),unit_amount:body.unitAmount,shipping_amount:body.shippingAmount,active:body.active};
+}
+export function operatorRefundInput(body) {
+  requireValue(uuid(body.transactionId), 'Choose a valid payment transaction.');
+  requireValue(Number.isInteger(body.amount) && body.amount > 0 && body.amount <= 100000000, 'Enter a valid refund amount in paise.');
+  requireValue(typeof body.reason === 'string' && body.reason.trim().length >= 5 && body.reason.trim().length <= 500, 'Enter a clear refund reason.');
+  return {transactionId:body.transactionId,amount:body.amount,reason:body.reason.trim()};
 }
 export async function hmac(secret, value) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
