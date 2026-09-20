@@ -34,6 +34,7 @@ create table if not exists public.refund_requests (
 );
 
 create unique index if not exists refund_appointment_unique on public.refund_requests(appointment_id) where appointment_id is not null;
+create index if not exists refund_transaction_idx on public.refund_requests(transaction_id);
 create index if not exists refund_user_requested_idx on public.refund_requests(user_id,requested_at desc);
 create index if not exists refund_status_requested_idx on public.refund_requests(status,requested_at);
 
@@ -239,7 +240,7 @@ returns jsonb language sql security definer set search_path='' as $$
   clicks as (select coalesce(jsonb_agg(row_to_json(c) order by c.clicks desc),'[]'::jsonb) value from
     (select path,target,count(*) clicks from filtered where event_name in ('click','outbound_click') group by path,target order by clicks desc limit 20) c),
   daily as (select coalesce(jsonb_agg(row_to_json(d) order by d.day),'[]'::jsonb) value from
-    (select occurred_at::date day,count(*) filter(where event_name='page_view') views,count(distinct session_id) sessions from filtered group by occurred_at::date) d),
+    (select occurred_at::date as day,count(*) filter(where event_name='page_view') views,count(distinct session_id) sessions from filtered group by occurred_at::date) d),
   business as (select
     (select count(*) from public.consultation_requests where submitted_at >= (select since from bounds)) consultations,
     (select count(*) from public.payment_transactions where created_at >= (select since from bounds)) payment_attempts,
@@ -250,6 +251,6 @@ returns jsonb language sql security definer set search_path='' as $$
   from totals,business,pages,clicks,daily;
 $$;
 
-revoke all on function public.claim_refund_issue(uuid),public.create_operator_refund(uuid,bigint,text),public.request_consultation_cancellation(uuid,uuid,text),public.record_payment_refund(text,text,bigint,bigint,uuid) from public,anon,authenticated;
+revoke all on function public.claim_refund_issue(uuid),public.create_operator_refund(uuid,bigint,text),public.request_consultation_cancellation(uuid,uuid,text),public.record_payment_refund(text,text,bigint,bigint,uuid),public.admin_dashboard_summary(integer) from public,anon,authenticated;
 grant execute on function public.claim_refund_issue(uuid),public.create_operator_refund(uuid,bigint,text),public.request_consultation_cancellation(uuid,uuid,text),public.record_payment_refund(text,text,bigint,bigint,uuid),public.record_full_refund(text,bigint),public.capture_payment(text,text,bigint,text,text),public.admin_dashboard_summary(integer) to service_role;
 commit;
