@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,readdir} from 'node:fs/promises';
 
 const pages=['contact.html','privacy-policy.html','terms.html','shipping-policy.html','refund-policy.html'];
 
@@ -52,4 +52,19 @@ test('physical products are final sale while non-waivable remedies remain',async
   assert.match(html,/no voluntary return, refund, replacement, exchange or cancellation/i);
   assert.match(html,/wrong, defective, damaged, spurious/i);
   assert.match(html,/cannot lawfully be excluded/i);
+});
+
+test('every website page loads the WhatsApp chat floater',async()=>{
+  const root=new URL('../',import.meta.url);
+  const htmlFiles=(await readdir(root)).filter(file=>file.endsWith('.html'));
+  for(const file of htmlFiles){
+    const html=await readFile(new URL('../'+file,import.meta.url),'utf8');
+    assert.match(html,/site\.js|whatsapp_connector\.js/,file+' must load the shared website shell or WhatsApp connector');
+  }
+  const connector=await readFile(new URL('../whatsapp_connector.js',import.meta.url),'utf8');
+  assert.match(connector,/https:\/\/wa\.me\/\$\{phone\}/);
+  assert.match(connector,/919173569555/);
+  assert.match(connector,/bottom:max\(/);
+  assert.match(connector,/right:24px/);
+  assert.match(connector,/Chat with SIAOS on WhatsApp/);
 });
