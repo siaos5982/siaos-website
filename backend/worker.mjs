@@ -1,4 +1,4 @@
-import {HttpError,requireValue,uuid,consultationInput,checkoutInput,cancellationInput,consultationConfirmationInput,directRefundInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
+import {HttpError,requireValue,uuid,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
 import {syncSheets,REPORTS} from './sheets.mjs';
 
 export function database(env) {
@@ -96,7 +96,7 @@ async function issueRefund(id,db,env){
     if(!refund){
       const claimed=await rpc(db,'claim_refund_issue',{p_request_id:request.id});
       if(!claimed)return {id:request.id,status:'processing',amount:request.eligible_amount,refundId:request.gateway_refund_id||null};
-      refund=await gateway(env,`payments/${eq(payment.gateway_payment_id)}/refund`,{method:'POST',body:{amount:request.eligible_amount,speed:'normal',notes:{refund_request_id:request.id,policy_percent:String(request.policy_percent)}}});
+      refund=await gateway(env,`payments/${eq(payment.gateway_payment_id)}/refund`,{method:'POST',body:{amount:request.eligible_amount,speed:'normal',notes:{refund_request_id:request.id}}});
     }
     requireValue(refund?.id&&refund.payment_id===payment.gateway_payment_id&&refund.amount===request.eligible_amount,'Unexpected refund response.',502);
     await db(`refund_requests?id=eq.${eq(request.id)}`,{method:'PATCH',body:{gateway_refund_id:refund.id,status:'processing',last_error:null,updated_at:new Date().toISOString()}});
@@ -159,15 +159,6 @@ export default {
         if(request.method==='POST'&&path==='/api/consultations'){
           const b=consultationInput(await jsonBody(request));
           const c=await rpc(db,'save_consultation',{p_user_id:user.id,p_appointment_id:b.appointmentId,p_service:b.service,p_service_name:b.serviceName,p_related_service:b.relatedService,p_details:b.details});result={id:c.id,status:c.status};
-        }else if(request.method==='GET'&&path==='/api/consultations/refunds'){
-          result={rows:await db(`refund_requests?user_id=eq.${eq(user.id)}&select=id,appointment_id,reason,policy_percent,eligible_amount,gateway_refund_id,status,requested_at,processed_at&order=requested_at.desc&limit=100`)};
-        }else if(request.method==='POST'&&path==='/api/consultations/cancel'){
-          await limited(db,`cancel:${user.id}`,5,300);const b=cancellationInput(await jsonBody(request));
-          const cancelled=await rpc(db,'request_consultation_cancellation',{p_user_id:user.id,p_appointment_id:b.appointmentId,p_reason:b.reason});
-          if(Number(cancelled.eligibleAmount)>0&&cancelled.id){
-            try{result={...cancelled,refund:await issueRefund(cancelled.id,db,env)};}
-            catch{result={...cancelled,status:'review_required',message:'Your appointment is cancelled. The eligible refund is recorded for operator review.'};}
-          }else result=cancelled;
         }else if(request.method==='POST'&&path==='/api/payments/create'){
           await limited(db,`checkout:${user.id}`,5,300);result=await createCheckout(await jsonBody(request),user,db,env);
         }else if(request.method==='POST'&&path==='/api/payments/verify'){
@@ -196,9 +187,6 @@ export default {
         }else if(request.method==='POST'&&/^\/api\/admin\/consultations\/[0-9a-f-]{36}\/confirm$/i.test(path)){
           const appointmentId=path.split('/')[4];const value=consultationConfirmationInput({...await jsonBody(request),appointmentId});
           result=await rpc(db,'confirm_whatsapp_consultation',{p_appointment_id:value.appointmentId,p_amount:value.amount,p_method:value.method,p_reference:value.reference,p_admin_user_id:user.id});
-        }else if(request.method==='POST'&&/^\/api\/admin\/consultations\/[0-9a-f-]{36}\/direct-refund$/i.test(path)){
-          const appointmentId=path.split('/')[4];const value=directRefundInput({...await jsonBody(request),appointmentId});
-          result=await rpc(db,'record_direct_consultation_refund',{p_appointment_id:value.appointmentId,p_reference:value.reference,p_admin_user_id:user.id});
         }else if(request.method==='POST'&&path==='/api/admin/refunds'){
           const value=operatorRefundInput(await jsonBody(request));
           const created=await rpc(db,'create_operator_refund',{p_transaction_id:value.transactionId,p_amount:value.amount,p_reason:value.reason});
