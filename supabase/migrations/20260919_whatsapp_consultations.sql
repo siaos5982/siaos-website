@@ -34,8 +34,8 @@ create unique index appointments_active_start_idx on public.appointments(start_a
 update public.catalog_prices set active=false where kind='consultation' and active=true;
 
 create or replace function public.available_appointment_slots(p_date date)
-returns table(start_at timestamptz,label text) language sql stable security definer set search_path='' as $$
-  select s.t,to_char(s.t at time zone 'Asia/Kolkata','FMHH12:MI AM')||' – '||to_char((s.t+interval '30 minutes') at time zone 'Asia/Kolkata','FMHH12:MI AM')
+returns table(start_at timestamptz,label text,availability text) language sql stable security definer set search_path='' as $$
+  select s.t,to_char(s.t at time zone 'Asia/Kolkata','FMHH12:MI AM')||' – '||to_char((s.t+interval '30 minutes') at time zone 'Asia/Kolkata','FMHH12:MI AM'),'available'::text
   from (select make_timestamptz(extract(year from p_date)::int,extract(month from p_date)::int,extract(day from p_date)::int,h,0,0,'Asia/Kolkata') t from generate_series(10,18) h) s
   where p_date between (now() at time zone 'Asia/Kolkata')::date and (now() at time zone 'Asia/Kolkata')::date+31
     and extract(isodow from p_date) between 1 and 6 and s.t>now()
