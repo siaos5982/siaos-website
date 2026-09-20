@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {consultationInput,checkoutInput,cancellationInput,consultationConfirmationInput,directRefundInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
-import {sheetRows} from '../backend/sheets.mjs';
+import {sheetRows,SHEET_TITLES,overviewRows} from '../backend/sheets.mjs';
 import worker from '../backend/worker.mjs';
 
 const id='22222222-2222-4222-8222-222222222222';
@@ -31,6 +31,7 @@ test('analytics strips query strings and full referrer details',()=>{const e=ana
 test('analytics rejects URL queries and absent consent',()=>{assert.throws(()=>analyticsInput({consent:false}));assert.throws(()=>analyticsInput({consent:true,event_name:'page_view',session_id:id,anonymous_id:id,path:'/login.html?otp=123456'}));});
 test('sheet consultation export uses approved fields only',()=>{const rows=sheetRows('consultations',[{id,details:{fullName:'=IMPORTXML("evil")',access_token:'secret'}}]);assert.ok(rows[0].includes('fullName'));assert.ok(!JSON.stringify(rows).includes('secret'));assert.ok(JSON.stringify(rows).includes('IMPORTXML'));});
 test('calendar export includes consultation name and IST time',()=>{const rows=sheetRows('calendar',[{start_at:'2026-09-18T04:30:00Z',end_at:'2026-09-18T05:00:00Z',consultation_requests:[{id,details:{fullName:'Test',phone:'123'}}]}]);assert.ok(rows[0].includes('clientName'));assert.ok(rows[1].includes('Test'));assert.ok(rows[1].some(v=>v.includes('10:00:00')));});
+test('Sheets sync targets the prepared workbook tabs and builds dashboard counts',()=>{assert.equal(SHEET_TITLES.clients,'Clients');assert.equal(SHEET_TITLES.refunds,'Refunds');assert.equal(SHEET_TITLES.catalog,'Catalog');const rows=overviewRows({clients:2,payments:3},'2026-09-20T00:00:00.000Z');assert.deepEqual(rows[4],['Clients',2,'Submitted profile and contact records']);assert.deepEqual(rows.at(-1),['Last refresh','2026-09-20T00:00:00.000Z','Automatic backend snapshot']);});
 test('API rejects disallowed browser origin',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health',{headers:{Origin:'https://evil.test'}}),{ALLOWED_ORIGINS:'https://siaos.in'});assert.equal(r.status,403);assert.equal(r.headers.get('access-control-allow-origin'),null);});
 test('health does not expose credentials',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health'),{SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,200);assert.ok(!(await r.text()).includes('secret'));});
 test('missing authorization cannot read admin data',async()=>{const r=await worker.fetch(new Request('https://api.test/api/admin/records?type=clients'),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,401);});
