@@ -1,5 +1,18 @@
 -- Apply ONCE after schema.sql, first in a staging project. Do not rerun schema.sql.
 begin;
+
+-- Trigger helpers must never be exposed as callable Data API endpoints.
+do $do$
+begin
+  if to_regprocedure('public.handle_new_auth_user()') is not null then
+    execute 'revoke all on function public.handle_new_auth_user() from public, anon, authenticated';
+  end if;
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    execute 'revoke all on function public.rls_auto_enable() from public, anon, authenticated';
+  end if;
+end
+$do$;
+
 alter table public.consultation_requests add column if not exists appointment_id uuid references public.appointments(id);
 create unique index if not exists consultation_appointment_unique on public.consultation_requests(appointment_id);
 -- Refuse concurrent checkout ledgers for one consultation, even across request IDs.
@@ -29,6 +42,8 @@ create table public.checkout_intents (
   transaction_id uuid references public.payment_transactions(id),
   created_at timestamptz not null default now()
 );
+create index if not exists checkout_intents_user_idx on public.checkout_intents(user_id);
+create index if not exists checkout_intents_transaction_idx on public.checkout_intents(transaction_id) where transaction_id is not null;
 create table public.admin_audit_log (
   id bigint generated always as identity primary key,
   user_id uuid references auth.users(id),
@@ -36,6 +51,7 @@ create table public.admin_audit_log (
   target text not null default '',
   created_at timestamptz not null default now()
 );
+create index if not exists admin_audit_log_user_idx on public.admin_audit_log(user_id) where user_id is not null;
 create table public.api_rate_limits (
   key text primary key,
   count integer not null,
@@ -108,8 +124,8 @@ exception when unique_violation then raise exception 'This appointment was just 
 end $$;
 
 create or replace function public.available_appointment_slots(p_date date)
-returns table(start_at timestamptz,label text) language sql stable security definer set search_path='' as $$
-  select s.t,to_char(s.t at time zone 'Asia/Kolkata','FMHH12:MI AM')||' – '||to_char((s.t+interval '30 minutes') at time zone 'Asia/Kolkata','FMHH12:MI AM')
+returns table(start_at timestamptz,label text,availability text) language sql stable security definer set search_path='' as $$
+  select s.t,to_char(s.t at time zone 'Asia/Kolkata','FMHH12:MI AM')||' – '||to_char((s.t+interval '30 minutes') at time zone 'Asia/Kolkata','FMHH12:MI AM'),'available'::text
   from (select make_timestamptz(extract(year from p_date)::int,extract(month from p_date)::int,extract(day from p_date)::int,h,0,0,'Asia/Kolkata') t from generate_series(10,18) h) s
   where p_date between (now() at time zone 'Asia/Kolkata')::date and (now() at time zone 'Asia/Kolkata')::date+31
     and extract(isodow from p_date) between 1 and 6 and s.t>now()
@@ -167,7 +183,7 @@ begin
 end $$;
 
 revoke all on function public.api_rate_limit(text,integer,integer),public.save_consultation(uuid,uuid,text,text,text,jsonb),public.capture_payment(text,text,bigint,text,text),public.record_full_refund(text,bigint),public.claim_sheets_sync() from public,anon,authenticated;
-grant execute on function public.api_rate_limit(text,integer,integer),public.save_consultation(uuid,uuid,text,text,text,jsonb),public.capture_payment(text,text,bigint,text,text),public.record_full_refund(text,bigint),public.claim_sheets_sync(),public.admin_dashboard_summary(integer) to service_role;
+grant execute on function public.api_rate_limit(text,integer,integer),public.save_consultation(uuid,uuid,text,text,text,jsonb),public.capture_payment(text,text,bigint,text,text),public.record_full_refund(text,bigint),public.claim_sheets_sync() to service_role;
 revoke all on function public.available_appointment_slots(date),public.hold_appointment_slot(text,text,text,timestamptz) from public;
 grant execute on function public.available_appointment_slots(date) to anon,authenticated;
 grant execute on function public.hold_appointment_slot(text,text,text,timestamptz) to authenticated;
