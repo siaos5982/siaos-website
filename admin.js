@@ -24,13 +24,6 @@
             button.disabled=true;const result=await window.SIAOSApi('admin/consultations/'+row.id+'/confirm',{method:'POST',body:{amount,method,reference}});
             status('Appointment confirmed. Direct payment recorded: ₹'+(result.amount/100).toLocaleString('en-IN'));await records();
           });td.append(button);
-        }else if(row.status==='cancelled'&&row.direct_refund_status==='required'){
-          const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Record direct refund';button.onclick=()=>run(async()=>{
-            const reference=prompt('Direct refund reference:','');if(reference===null)return;
-            if(!confirm('Mark the recorded direct refund as completed?'))return;
-            button.disabled=true;const result=await window.SIAOSApi('admin/consultations/'+row.id+'/direct-refund',{method:'POST',body:{reference}});
-            status('Direct consultation refund recorded: ₹'+(result.amount/100).toLocaleString('en-IN'));await records();
-          });td.append(button);
         }else td.textContent='—';
       }else if(row[key]&&typeof row[key]==='object'){
         const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='View details';pre.textContent=JSON.stringify(row[key],null,2);details.append(summary,pre);td.append(details);
