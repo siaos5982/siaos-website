@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
-const pages=['contact.html','privacy-policy.html','terms.html','shipping-policy.html','cancellation-policy.html','refund-policy.html'];
+const pages=['contact.html','privacy-policy.html','terms.html','shipping-policy.html','refund-policy.html'];
 
 test('all public customer-policy pages use the established SIAOS theme and fonts',async()=>{
   for(const page of pages){
@@ -37,9 +37,14 @@ test('commerce policies preserve applicable statutory consumer rights',async()=>
   }
 });
 
-test('consultation cancellation schedule matches the approved hour-based tiers',async()=>{
-  const html=await readFile(new URL('../cancellation-policy.html',import.meta.url),'utf8');
-  for(const value of ['75%','20 hours or more','50%','12 to under 20 hours','25%','5 to under 12 hours','0%','Under 5 hours'])assert.ok(html.includes(value),value);
+test('consultation percentage policy and cancellation page are removed',async()=>{
+  const [contact,terms,refund,site]=await Promise.all(['contact.html','terms.html','refund-policy.html','site.js'].map(page=>readFile(new URL('../'+page,import.meta.url),'utf8')));
+  for(const content of [contact,terms,refund,site]){
+    assert.doesNotMatch(content,/cancellation-policy\.html/i);
+    assert.doesNotMatch(content,/75%|50%|25%|20 hours|under 20 hours|under 12 hours|under 5 hours/i);
+  }
+  assert.match(refund,/consultation payments[\s\S]*handled directly in the verified SIAOS WhatsApp conversation/i);
+  assert.doesNotMatch(refund,/consultation refund percentage|cancellation schedule/i);
 });
 
 test('physical products are final sale while non-waivable remedies remain',async()=>{
