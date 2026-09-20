@@ -20,7 +20,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 
 - Cloudflare Worker API with origin checks, bounded request bodies, validation, per-route rate limits, server-side Supabase access, and health endpoint.
 - Razorpay order creation for physical products and the ₹99 report from database-owned prices, HMAC verification, webhook idempotency, atomic payment fulfilment, partial/full refunds, and operator reconciliation.
-- Phone OTP authentication hardening, optional Cloudflare Turnstile support, resend cooldown, and complete removal of the browser OTP/developer bypass.
+- Phone OTP authentication code, optional Cloudflare Turnstile support, resend cooldown, and complete removal of the browser OTP/developer bypass. SMS OTP is the selected production method; live delivery remains pending until a compatible SMS provider and Indian messaging setup are connected in Supabase.
 - Staff dashboard protected by an administrator UUID allowlist and Supabase Authenticator Assurance Level 2 (TOTP).
 - Consultation persistence linked to durable requested appointments, consent timestamp, account view, calendar reporting, and a prefilled customer-initiated WhatsApp handoff containing the appointment details. The MFA-protected calendar records direct payment confirmation; consultation changes and payment resolutions continue in the verified WhatsApp conversation.
 - Private Google Sheets snapshot sync for clients, consultations, calendar, orders, payments, refunds, catalogue prices, readings, consented anonymous visitor events, and report access.
