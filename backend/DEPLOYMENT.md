@@ -15,7 +15,7 @@ their provider credentials and staging checks.
    The person signs in with phone OTP and enrols an authenticator app at `/admin.html`.
 4. Use Razorpay TEST credentials first. Production requires an activated merchant
    account, approved prices for every product size and the ₹99 report, delivery
-   availability, tax/shipping treatment and final refund/cancellation policies.
+   availability, tax/shipping treatment and final product/report refund policies.
 5. Create a NEW, dedicated, restricted Google spreadsheet. Share only that spreadsheet
    with the designated Google service account. Do not use public/link sharing.
 6. Confirm an appropriate retention/deletion policy for visitor and client information.
@@ -83,8 +83,8 @@ payments already initiated.
 - Razorpay is not used for consultation checkout. The booking API converts the short
   hold into a durable `requested` appointment before the customer is redirected to
   WhatsApp. An MFA-protected calendar action records the direct payment reference and
-  confirms the appointment. The same view calculates and tracks direct refunds under
-  the published time tiers; the operator records the transfer reference after payment.
+  confirms the appointment. Consultation changes, cancellations and any direct-payment
+  resolution continue only in the verified WhatsApp conversation.
 - Historical Razorpay consultation transactions remain readable so prior payments and
   refunds can still be reconciled safely.
 - If provider order creation succeeds but a subsequent write fails, the checkout
@@ -107,7 +107,7 @@ The application manages these reserved tabs in the dedicated spreadsheet:
 | Calendar | Appointment times, status, client name, phone and request ID |
 | Orders | Items, delivery details, payment/dispatch status |
 | Payments | Gateway references, amount, currency, capture/refund status |
-| Refunds | Cancellation/operator requests, policy percentage, eligible amount and provider status |
+| Refunds | Product/report operator requests, eligible amount and provider status |
 | Catalog | Server-approved product/report prices and inactive historical consultation prices |
 | Visitors | Consented anonymous events, path, device and referrer domain |
 | Readings | Reading history metadata, not private reading content |
@@ -139,7 +139,7 @@ and retention controls; this code cannot revoke downloaded copies.
   can withdraw; no form text, OTP, full URL queries, IP address or precise location
   appears in analytics exports.
 - Responsive and accessible browser QA for every page, including checkout/admin.
-- Publish real contact/privacy/terms/shipping/cancellation/refund pages; remove
+- Publish real contact/privacy/terms/shipping/refund pages; remove
   unverified reviews; finish cart/report fulfilment; verify inventory and dispatch.
 - Custom domain, HTTPS, Supabase redirects, backups, alerts and restore testing.
 
