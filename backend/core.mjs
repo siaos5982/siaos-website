@@ -92,22 +92,12 @@ export function compatibilityPaidReport(numbers){
       {label:'Closing reflection',title:'Potential is shaped by choices',copy:`The ${score}% score describes a symbolic number pattern. Reliable care, clear boundaries, repair after conflict and shared values remain the meaningful measures of the relationship.`}
     ]};
 }
-export function cancellationInput(body) {
-  requireValue(uuid(body.appointmentId), 'Choose a valid appointment.');
-  requireValue(typeof (body.reason ?? '') === 'string' && (body.reason ?? '').trim().length <= 500, 'Cancellation reason is too long.');
-  return {appointmentId:body.appointmentId,reason:(body.reason ?? '').trim()};
-}
 export function consultationConfirmationInput(body) {
   requireValue(uuid(body.appointmentId), 'Choose a valid appointment.');
   requireValue(Number.isInteger(body.amount) && body.amount > 0 && body.amount <= 100000000, 'Enter the received consultation amount in paise.');
   requireValue(typeof body.method === 'string' && body.method.trim().length >= 2 && body.method.trim().length <= 50, 'Enter the direct payment method.');
   requireValue(typeof body.reference === 'string' && body.reference.trim().length >= 2 && body.reference.trim().length <= 120, 'Enter the direct payment reference.');
   return {appointmentId:body.appointmentId,amount:body.amount,method:body.method.trim(),reference:body.reference.trim()};
-}
-export function directRefundInput(body) {
-  requireValue(uuid(body.appointmentId), 'Choose a valid appointment.');
-  requireValue(typeof body.reference === 'string' && body.reference.trim().length >= 2 && body.reference.trim().length <= 120, 'Enter the direct refund reference.');
-  return {appointmentId:body.appointmentId,reference:body.reference.trim()};
 }
 export function catalogInput(body) {
   requireValue(body.kind === 'product', 'Only physical products can be added to the online payment catalogue.');
