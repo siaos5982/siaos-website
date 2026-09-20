@@ -180,7 +180,7 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
   const links=document.createElement('div');
   links.className='policy-footer';
   links.style.cssText='display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;margin-bottom:14px';
-  links.innerHTML='<a href="contact.html">Contact</a><a href="privacy-policy.html">Privacy</a><a href="terms.html">Terms</a><a href="shipping-policy.html">Shipping</a><a href="cancellation-policy.html">Cancellation</a><a href="refund-policy.html">Refunds</a>';
+  links.innerHTML='<a href="contact.html">Contact</a><a href="privacy-policy.html">Privacy</a><a href="terms.html">Terms</a><a href="shipping-policy.html">Shipping</a><a href="refund-policy.html">Refunds</a>';
   links.querySelectorAll('a').forEach(link=>{link.style.color='var(--gold,#caa43b)';link.style.textDecoration='underline';link.style.textUnderlineOffset='3px';});
   footer.prepend(links);
 })();
