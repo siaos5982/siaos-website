@@ -163,13 +163,13 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
     if ([...document.scripts].some(script => script.src && new URL(script.src,location.href).pathname === requestedPath)) { resolve(); return; }
     const script = document.createElement('script'); script.src = src; script.onload = resolve; script.onerror = reject; document.head.append(script);
   });
+  loadScript(new URL('whatsapp_connector.js?v=20260920-1',base).href).catch(() => {});
   (async () => {
     await loadScript(new URL('auth-config.js?v=20260831-1',base).href);
     const config = window.SIAOS_AUTH_CONFIG || {};
     if (config.supabaseUrl && config.supabasePublishableKey && !window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
     await loadScript(new URL('account-store.js?v=20260831-1',base).href);
     await loadScript(new URL('auth-ui.js?v=20260831-1',base).href);
-    await loadScript(new URL('whatsapp_connector.js',base).href);
   })().catch(() => {});
 })();
 
