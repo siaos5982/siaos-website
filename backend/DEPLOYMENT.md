@@ -2,15 +2,18 @@
 
 ## Current status
 
-The live Supabase migrations have been applied and verified. Worker deployment, SMS
-delivery, Razorpay payment, Google Sheets transfer, and DNS activation still require
-their provider credentials and staging checks.
+The live Supabase migrations have been applied and verified. Phone-based SMS OTP is
+the selected customer sign-in method and the website already uses Supabase phone OTP
+APIs. Production SMS delivery still requires an SMS provider, Indian messaging
+compliance, provider credentials and staging checks. Worker deployment, Razorpay
+payment, Google Sheets transfer, and DNS activation also remain pending.
 
 ## Required owner decisions and access
 
 1. Connect the SIAOS Supabase project and confirm its existing schema/migrations.
-2. Choose/configure the Supabase SMS provider. Configure OTP rate limits and CAPTCHA
-   in Supabase itself, not only the browser. Confirm the provider's Indian SMS setup.
+2. Connect a Supabase-compatible SMS provider for the selected phone OTP flow.
+   Configure OTP rate limits and CAPTCHA in Supabase itself, not only the browser.
+   Complete the provider's Indian DLT/sender/template requirements before live testing.
 3. Supply the approved administrator's Supabase user UUID via server configuration.
    The person signs in with phone OTP and enrols an authenticator app at `/admin.html`.
 4. Use Razorpay TEST credentials first. Production requires an activated merchant
