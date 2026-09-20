@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {consultationInput,checkoutInput,cancellationInput,consultationConfirmationInput,directRefundInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
+import {consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
 import {sheetRows,SHEET_TITLES,overviewRows} from '../backend/sheets.mjs';
 import worker from '../backend/worker.mjs';
 
@@ -21,8 +21,7 @@ test('paid report checkout accepts only the fixed report and four reduced number
 test('paid compatibility report is generated server-side from reduced numbers',()=>{const value=compatibilityPaidReport({yourMulank:1,yourBhagyank:2,partnerMulank:3,partnerBhagyank:4});assert.equal(value.sections.length,8);assert.match(value.introduction,/% compatibility pattern/);assert.equal(value.numbers.partnerMulank,3);});
 test('product checkout requires a real address',()=>assert.throws(()=>checkoutInput({...order,address:{}})));
 test('consultations cannot enter Razorpay checkout',()=>assert.throws(()=>checkoutInput({...order,kind:'consultation',consultationId:id})));
-test('cancellation accepts only a UUID and a bounded reason',()=>{assert.deepEqual(cancellationInput({appointmentId:id,reason:'  Schedule changed  '}),{appointmentId:id,reason:'Schedule changed'});assert.throws(()=>cancellationInput({appointmentId:'fake'}));assert.throws(()=>cancellationInput({appointmentId:id,reason:'x'.repeat(501)}));});
-test('WhatsApp consultation confirmation requires an integer direct payment and references',()=>{const value=consultationConfirmationInput({appointmentId:id,amount:110000,method:' UPI ',reference:' UTR-123 '});assert.equal(value.amount,110000);assert.equal(value.method,'UPI');assert.throws(()=>consultationConfirmationInput({appointmentId:id,amount:0,method:'UPI',reference:'UTR-123'}));assert.equal(directRefundInput({appointmentId:id,reference:' REF-99 '}).reference,'REF-99');});
+test('WhatsApp consultation confirmation requires an integer direct payment and references',()=>{const value=consultationConfirmationInput({appointmentId:id,amount:110000,method:' UPI ',reference:' UTR-123 '});assert.equal(value.amount,110000);assert.equal(value.method,'UPI');assert.throws(()=>consultationConfirmationInput({appointmentId:id,amount:0,method:'UPI',reference:'UTR-123'}));});
 test('catalogue allows only product prices with integer paise and exact variants',()=>{assert.equal(catalogInput({kind:'product',slug:'clear-quartz-bracelet',variant:'M',name:'Clear Quartz Bracelet',unitAmount:110000,shippingAmount:0,active:true}).unit_amount,110000);assert.throws(()=>catalogInput({kind:'consultation',slug:'tarot',variant:'Single Question Reading',name:'Tarot',unitAmount:110000,shippingAmount:0,active:true}));assert.throws(()=>catalogInput({kind:'product',slug:'test',variant:'',name:'Test',unitAmount:1.5,shippingAmount:0,active:true}));});
 test('operator refunds require a transaction, integer paise and a clear reason',()=>{assert.equal(operatorRefundInput({transactionId:id,amount:5000,reason:'Duplicate payment'}).amount,5000);assert.throws(()=>operatorRefundInput({transactionId:id,amount:1.5,reason:'Duplicate payment'}));assert.throws(()=>operatorRefundInput({transactionId:id,amount:5000,reason:'bad'}));});
 test('canonical comparison ignores JSON property order recursively',()=>assert.equal(canonical({b:2,a:{z:1,y:2}}),canonical({a:{y:2,z:1},b:2})));
@@ -44,9 +43,23 @@ test('consultation booking saves first and hands the full request to WhatsApp',a
   const script=await readFile(new URL('../booking.js',import.meta.url),'utf8');
   assert.match(script,/SIAOSApi\('consultations'/);
   assert.match(script,/https:\/\/wa\.me\/919173569555\?text=/);
+  assert.match(script,/Booking reference:/);
+  assert.match(script,/Name:/);
+  assert.match(script,/Service:/);
+  assert.match(script,/Consultation:/);
   assert.match(script,/Appointment date:/);
   assert.match(script,/Appointment time:/);
+  assert.match(script,/Appointment mode:/);
+  assert.match(script,/Submitted details:/);
+  assert.match(script,/Phone number/);
+  assert.match(script,/WhatsApp number/);
   assert.doesNotMatch(script,/location\.(?:href|assign)\s*\(?'payment\.html/);
+});
+test('consultation cancellation is managed on WhatsApp without a percentage API',async()=>{
+  const [appointments,worker]=await Promise.all([readFile(new URL('../account-appointments.js',import.meta.url),'utf8'),readFile(new URL('../backend/worker.mjs',import.meta.url),'utf8')]);
+  assert.match(appointments,/Manage on WhatsApp/);
+  assert.doesNotMatch(appointments,/consultations\/(?:cancel|refunds)|policy_percent|direct_refund_percent/);
+  assert.doesNotMatch(worker,/api\/consultations\/(?:cancel|refunds)|request_consultation_cancellation|record_direct_consultation_refund/);
 });
 test('admin allowlist and MFA are independently enforced',async()=>{
   const original=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({id}),{status:200});
@@ -108,21 +121,6 @@ test('duplicate completed webhook does not fulfil twice',async()=>{
   const original=globalThis.fetch,body=JSON.stringify({event:'payment.captured'});let requests=0;
   globalThis.fetch=async()=>{requests++;return new Response(JSON.stringify([{processed_at:'2026-09-17T00:00:00Z'}]));};
   try{const result=await worker.fetch(new Request('https://api.test/api/webhooks/razorpay',{method:'POST',body,headers:{'x-razorpay-signature':await hmac('test',body),'x-razorpay-event-id':'event_test'}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',RAZORPAY_WEBHOOK_SECRET:'test'});assert.equal(result.status,200);assert.equal(requests,1);}finally{globalThis.fetch=original;}
-});
-test('consultation cancellation uses the server RPC and returns a recorded no-refund result',async()=>{
-  const original=globalThis.fetch,calls=[];
-  globalThis.fetch=async(url,options={})=>{
-    calls.push(String(url));let data;
-    if(String(url).endsWith('/auth/v1/user'))data={id};
-    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
-    else if(String(url).includes('/rpc/request_consultation_cancellation'))data={appointmentId:id,status:'not_due',policyPercent:0,eligibleAmount:0};
-    else throw new Error('Unexpected URL '+url);
-    return new Response(JSON.stringify(data),{status:200});
-  };
-  try{
-    const response=await worker.fetch(new Request('https://api.test/api/consultations/cancel',{method:'POST',headers:{Authorization:'Bearer test'},body:JSON.stringify({appointmentId:id,reason:'Changed plan'})}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret'});
-    assert.equal(response.status,200);assert.equal((await response.json()).policyPercent,0);assert.ok(calls.some(url=>url.includes('request_consultation_cancellation')));
-  }finally{globalThis.fetch=original;}
 });
 test('processed refund webhook records the provider cumulative amount',async()=>{
   const original=globalThis.fetch,refundId='rfnd_test',paymentId='pay_test',requestId=id;
