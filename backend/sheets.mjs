@@ -12,6 +12,37 @@ export const REPORTS={
   visitors:{table:'analytics_events',select:'id,event_name,anonymous_id,session_id,path,referrer,target,metadata,occurred_at',order:'id.asc'},
   reports:{table:'report_purchases',select:'id,user_id,report_type,title,status,purchased_at,access_expires_at',order:'purchased_at.asc,id.asc'}
 };
+export const SHEET_TITLES=Object.freeze({
+  clients:'Clients',
+  consultations:'Consultations',
+  calendar:'Calendar',
+  orders:'Orders',
+  payments:'Payments',
+  refunds:'Refunds',
+  catalog:'Catalog',
+  readings:'Readings',
+  visitors:'Visitors',
+  reports:'Reports'
+});
+export function overviewRows(counts,refreshedAt){
+  return [
+    ['SIAOS Operations Reporting'],
+    ['Private reporting mirror — Supabase remains the system of record'],
+    [],
+    ['Metric','Records','Notes'],
+    ['Clients',counts.clients??0,'Submitted profile and contact records'],
+    ['Consultations',counts.consultations??0,'Requests, consent and appointment references'],
+    ['Calendar',counts.calendar??0,'Appointment times, status and direct payment references'],
+    ['Orders',counts.orders??0,'Product fulfilment and delivery details'],
+    ['Payments',counts.payments??0,'Razorpay product and ₹99 report transactions'],
+    ['Refunds',counts.refunds??0,'Eligible, processing and completed refunds'],
+    ['Visitors',counts.visitors??0,'Consented anonymous activity only'],
+    ['Readings',counts.readings??0,'Saved reading metadata'],
+    ['Reports',counts.reports??0,'Purchased report access records'],
+    ['Catalog',counts.catalog??0,'Server-approved prices and availability'],
+    ['Last refresh',refreshedAt,'Automatic backend snapshot']
+  ];
+}
 const b64url=bytes=>btoa(String.fromCharCode(...bytes)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
 const text64=text=>b64url(new TextEncoder().encode(text));
 async function googleToken(env){
@@ -55,7 +86,7 @@ export async function syncSheets(env,db){
         rows.push(...batch);requireValue(rows.length<=max,`The ${name} export exceeds its configured limit; increase capacity before syncing.`,409);
         if(batch.length<500)break;
       }
-      const values=sheetRows(name,rows);const title=`SIAOS_${name}`;let existing=snapshot.sheets?.find(s=>s.properties.title===title);
+      const values=sheetRows(name,rows);const title=SHEET_TITLES[name];let existing=snapshot.sheets?.find(s=>s.properties.title===title);
       if(!existing){const added=await google(':batchUpdate',{method:'POST',body:{requests:[{addSheet:{properties:{title,gridProperties:{rowCount:Math.max(values.length,1000),columnCount:Math.max(values[0].length,26)}}}}]}});existing=added.replies[0].addSheet;}
       const rowCount=Math.max(existing.properties.gridProperties.rowCount,values.length);
       const columnCount=Math.max(existing.properties.gridProperties.columnCount,values[0].length);
@@ -65,10 +96,15 @@ export async function syncSheets(env,db){
       if(rowCount>values.length)await google(`/values/${encodeURIComponent(title+'!A'+(values.length+1)+':ZZ'+rowCount)}:clear`,{method:'POST',body:{}});
       counts[name]=rows.length;
     }
-    await db('integration_jobs?name=eq.sheets',{method:'PATCH',body:{locked_until:null,last_success:new Date().toISOString(),last_error:null}});
+    const refreshedAt=new Date().toISOString();const dashboard=overviewRows(counts,refreshedAt);
+    let overview=snapshot.sheets?.find(s=>s.properties.title==='Overview');
+    if(!overview){const added=await google(':batchUpdate',{method:'POST',body:{requests:[{addSheet:{properties:{title:'Overview',index:0,gridProperties:{rowCount:1000,columnCount:26,frozenRowCount:4}}}}]}});overview=added.replies[0].addSheet;}
+    await google(':batchUpdate',{method:'POST',body:{requests:[{updateSheetProperties:{properties:{sheetId:overview.properties.sheetId,gridProperties:{rowCount:Math.max(overview.properties.gridProperties?.rowCount||0,1000),columnCount:Math.max(overview.properties.gridProperties?.columnCount||0,26),frozenRowCount:4}},fields:'gridProperties'}}]}});
+    await google(`/values/${encodeURIComponent('Overview!A1')}?valueInputOption=RAW`,{method:'PUT',body:{majorDimension:'ROWS',values:dashboard}});
+    await db('integration_jobs?name=eq.sheets',{method:'PATCH',body:{locked_until:null,last_success:refreshedAt,last_error:null}});
     // Expired rate-limit keys need not be retained.
     await db(`api_rate_limits?expires_at=lt.${encodeURIComponent(new Date(Date.now()-86400000).toISOString())}`,{method:'DELETE'});
-    return {synced:true,counts};
+    return {synced:true,counts,refreshedAt};
   }catch(error){
     await db('integration_jobs?name=eq.sheets',{method:'PATCH',body:{locked_until:null,last_error:'Sync failed. Check service permissions, Sheet capacity and configuration.'}}).catch(()=>{});
     throw error instanceof HttpError?error:new HttpError(502,'Google Sheets sync failed. No credentials were logged.');
