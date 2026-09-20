@@ -26,7 +26,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 - Private Google Sheets snapshot sync for clients, consultations, calendar, orders, payments, refunds, catalogue prices, readings, consented anonymous visitor events, and report access.
 - Explicit analytics consent; only anonymous page/event metadata is accepted. Query strings, full referrers, form contents, OTPs, passwords, payment-card data, and auth tokens are excluded.
 - Backend-owned price catalogue and checkout intent ledger. The browser cannot submit a price.
-- Consultation cancellation retains the published 75% / 50% / 25% / 0% policy; direct WhatsApp-arranged payments and refunds require operational reconciliation, while historical online payments remain protected by the existing refund ledger.
+- Consultation payment, confirmation, rescheduling and cancellation requests are handled in the verified WhatsApp conversation. The public fixed-percentage consultation cancellation policy and customer cancellation API have been removed; product and ₹99-report payment refunds remain protected by the refund ledger.
 - Server-generated ₹99 compatibility report fulfilment with database-owned pricing and protected 15-day account access.
 - Automated unit/integration-style tests for validation, authentication boundaries, pricing, signature verification, webhook replay safety, analytics minimisation, and exports.
 
@@ -35,7 +35,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 1. Apply the incremental Supabase migration to staging, then verify every RPC and Row Level Security policy.
 2. Configure production secrets and identifiers listed in `backend/DEPLOYMENT.md`; never commit secret values.
 3. Verify published product prices and the seeded ₹99 compatibility report price. Consultation checkout prices are intentionally disabled.
-4. Business owner and qualified Indian counsel should review the customer policies before payments are enabled. The owner selected consultation refund tiers of 75% at 20+ hours, 50% at 12–under 20 hours, 25% at 5–under 12 hours, and 0% under 5 hours/no-show. Physical products are final sale except for non-waivable consumer-law remedies.
+4. Business owner and qualified Indian counsel should review the customer policies before payments are enabled. Consultation changes are agreed in the verified WhatsApp conversation without a published fixed-percentage schedule. Physical products are final sale except for non-waivable consumer-law remedies.
 5. Confirm any applicable tax/GST details and designate the individual grievance officer before production checkout is enabled.
 6. Share the private reporting spreadsheet with the backend Google service account and set its spreadsheet ID.
 7. Complete Razorpay and Supabase production-domain configuration for `siaos.in` and `www.siaos.in`.
