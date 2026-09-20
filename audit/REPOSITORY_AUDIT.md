@@ -1,6 +1,6 @@
 # SIAOS repository audit
 
-Audit date: 18 September 2026  
+Audit date: 20 September 2026  
 Baseline commit: `d3761e7a3087f1f0c15ecfb581a156e3625147ac`
 
 ## Scope
@@ -14,7 +14,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 - Booking slot RPCs and several commerce tables existed, but consultation details were not reliably saved server-side.
 - The payment page was a placeholder; browser data was trusted and there was no gateway verification or webhook fulfilment.
 - No private staff dashboard or production API existed.
-- The audited baseline referenced six missing public pages. This branch now supplies themed Contact, Privacy, Terms, Shipping, Cancellation, and Refund pages using verified business contact details already present on the main page.
+- The audited baseline referenced six missing public pages. This branch supplies themed Contact, Privacy, Terms, Shipping, and Refund pages using verified business contact details already present on the main page. The separate Cancellation page was removed when consultation checkout and the fixed-percentage cancellation flow were retired.
 
 ## Implemented on this branch
 
@@ -22,7 +22,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 - Razorpay order creation for physical products and the ₹99 report from database-owned prices, HMAC verification, webhook idempotency, atomic payment fulfilment, partial/full refunds, and operator reconciliation.
 - Phone OTP authentication hardening, optional Cloudflare Turnstile support, resend cooldown, and complete removal of the browser OTP/developer bypass.
 - Staff dashboard protected by an administrator UUID allowlist and Supabase Authenticator Assurance Level 2 (TOTP).
-- Consultation persistence linked to durable requested appointments, consent timestamp, account view, calendar reporting, and a prefilled customer-initiated WhatsApp handoff containing the appointment details. The MFA-protected calendar records direct payment confirmation and completion of time-tiered direct refunds.
+- Consultation persistence linked to durable requested appointments, consent timestamp, account view, calendar reporting, and a prefilled customer-initiated WhatsApp handoff containing the appointment details. The MFA-protected calendar records direct payment confirmation; consultation changes and payment resolutions continue in the verified WhatsApp conversation.
 - Private Google Sheets snapshot sync for clients, consultations, calendar, orders, payments, refunds, catalogue prices, readings, consented anonymous visitor events, and report access.
 - Explicit analytics consent; only anonymous page/event metadata is accepted. Query strings, full referrers, form contents, OTPs, passwords, payment-card data, and auth tokens are excluded.
 - Backend-owned price catalogue and checkout intent ledger. The browser cannot submit a price.
@@ -51,4 +51,4 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 - `npm test`: 42 passing tests.
 - `node --check`: backend worker and Sheets integration parse successfully.
 - `git diff --check`: no whitespace errors.
-- Repository audit: no duplicate HTML IDs detected and all six footer policy/contact references now resolve.
+- Repository audit: no duplicate HTML IDs detected and all five footer policy/contact references now resolve.
