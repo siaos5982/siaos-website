@@ -27,6 +27,8 @@ Playwright and a Chromium binary. It is not included in `npm test`.
 - `backend/DEPLOYMENT.md`: staging setup, secrets, tests, and launch gates.
 - `supabase/migrations/20260917_backend.sql`: core incremental backend migration.
 - `supabase/migrations/20260918_refunds_catalog.sql`: refund workflow, paid-report fulfilment, and approved storefront catalogue.
+- `supabase/migrations/20260919_whatsapp_consultations.sql`: durable consultation requests and WhatsApp-first confirmation.
+- `supabase/migrations/20260920_remove_consultation_percentage_cancellation.sql`: removes the retired percentage-based consultation cancellation functions.
 - `admin.html`: administrator dashboard, authenticator verification, calendar.
 
 The database is the authoritative source. Google Sheets is a restricted reporting
