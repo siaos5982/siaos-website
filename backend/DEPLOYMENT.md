@@ -26,7 +26,7 @@ Do not paste secrets into chat or repository files. Use the provider's secret ma
 ## Database staging
 
 For a completely NEW test Supabase project, apply `supabase/schema.sql` once, then
-`supabase/migrations/20260917_backend.sql`, `supabase/migrations/20260918_refunds_catalog.sql`, and `supabase/migrations/20260919_whatsapp_consultations.sql`. On an existing project, first inspect
+`supabase/migrations/20260917_backend.sql`, `supabase/migrations/20260918_refunds_catalog.sql`, `supabase/migrations/20260919_whatsapp_consultations.sql`, and `supabase/migrations/20260920_remove_consultation_percentage_cancellation.sql`. On an existing project, first inspect
 what is actually installed. The old schema file has non-idempotent CREATE POLICY
 statements: do not rerun it blindly. Back up production before any migration.
 
