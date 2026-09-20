@@ -2,9 +2,9 @@
 
 ## Current status
 
-Code exists; no live Supabase migration, Worker deployment, SMS delivery, Razorpay
-payment, Google Sheets transfer, or DNS change has been performed in this task.
-All provider-backed behaviour must be tested in staging before activation.
+The live Supabase migrations have been applied and verified. Worker deployment, SMS
+delivery, Razorpay payment, Google Sheets transfer, and DNS activation still require
+their provider credentials and staging checks.
 
 ## Required owner decisions and access
 
@@ -101,16 +101,17 @@ The application manages these reserved tabs in the dedicated spreadsheet:
 
 | Tab | Contents |
 | --- | --- |
-| SIAOS_clients | Submitted name/contact fields, consent and account dates |
-| SIAOS_consultations | Each consultation and its submitted form fields |
-| SIAOS_calendar | Appointment times, status, client name, phone and request ID |
-| SIAOS_orders | Items, delivery details, payment/dispatch status |
-| SIAOS_payments | Gateway references, amount, currency, capture/refund status |
-| SIAOS_refunds | Cancellation/operator requests, policy percentage, eligible amount and provider status |
-| SIAOS_catalog | Server-approved product/report prices and inactive historical consultation prices |
-| SIAOS_visitors | Consented anonymous events, path, device and referrer domain |
-| SIAOS_readings | Reading history metadata, not private reading content |
-| SIAOS_reports | Purchase and report access history |
+| Overview | Automatic record counts and last successful refresh |
+| Clients | Submitted name/contact fields, consent and account dates |
+| Consultations | Each consultation and its submitted form fields |
+| Calendar | Appointment times, status, client name, phone and request ID |
+| Orders | Items, delivery details, payment/dispatch status |
+| Payments | Gateway references, amount, currency, capture/refund status |
+| Refunds | Cancellation/operator requests, policy percentage, eligible amount and provider status |
+| Catalog | Server-approved product/report prices and inactive historical consultation prices |
+| Visitors | Consented anonymous events, path, device and referrer domain |
+| Readings | Reading history metadata, not private reading content |
+| Reports | Purchase and report access history |
 
 Sync refreshes these managed tabs and clears obsolete trailing rows; do not put
 manual notes in those tabs. Keep notes in separate tabs. Customer data is written
