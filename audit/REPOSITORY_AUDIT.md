@@ -27,6 +27,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 - Explicit analytics consent; only anonymous page/event metadata is accepted. Query strings, full referrers, form contents, OTPs, passwords, payment-card data, and auth tokens are excluded.
 - Backend-owned price catalogue and checkout intent ledger. The browser cannot submit a price.
 - Consultation payment, confirmation, rescheduling and cancellation requests are handled in the verified WhatsApp conversation. The public fixed-percentage consultation cancellation policy and customer cancellation API have been removed; product and ₹99-report payment refunds remain protected by the refund ledger.
+- A responsive WhatsApp assistance floater is available at the bottom-right of every website page and opens the verified SIAOS number with a prefilled support message.
 - Server-generated ₹99 compatibility report fulfilment with database-owned pricing and protected 15-day account access.
 - Automated unit/integration-style tests for validation, authentication boundaries, pricing, signature verification, webhook replay safety, analytics minimisation, and exports.
 
@@ -48,7 +49,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 
 ## Verification
 
-- `npm test`: 42 passing tests.
+- `npm test`: 43 passing tests.
 - `node --check`: backend worker and Sheets integration parse successfully.
 - `git diff --check`: no whitespace errors.
 - Repository audit: no duplicate HTML IDs detected and all five footer policy/contact references now resolve.
