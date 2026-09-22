@@ -1,0 +1,1440 @@
+{
+  "commit": "d3761e7a3087f1f0c15ecfb581a156e3625147ac",
+  "files": [
+    {
+      "path": ".gitkeep",
+      "size": 0,
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "ACCOUNT_BACKEND_SETUP.md",
+      "size": 1043,
+      "sha": "0e424fc19090b40882b52b2f666d6157bf3954e9"
+    },
+    {
+      "path": "account-store.js",
+      "size": 12985,
+      "sha": "d44c2657a8159cfcb00e8052090f345daaf02862"
+    },
+    {
+      "path": "account.html",
+      "size": 3466,
+      "sha": "c82662dd394d47e54cb7bb3625160191296aa707"
+    },
+    {
+      "path": "account.js",
+      "size": 5275,
+      "sha": "b57626bcb59c7f5a673801c8a889a719ad0cb78b"
+    },
+    {
+      "path": "april-2026-horoscope-all-rashis.html",
+      "size": 13855,
+      "sha": "79fe7a7fbc14354862e41eaf174a2b79444a1ae9"
+    },
+    {
+      "path": "april-2026-mulank-forecast-1-9.html",
+      "size": 11658,
+      "sha": "24c4fdc8cf5a0d809cce5e5411384fb2a9543aba"
+    },
+    {
+      "path": "assets/august-2026-lunar-eclipse-blog-cover-final.png",
+      "size": 2039566,
+      "sha": "14ced6f00dabc30a3a8036d90c47aa6f356d7bc5"
+    },
+    {
+      "path": "assets/august-2026-lunar-eclipse-blog-hero.png",
+      "size": 1993436,
+      "sha": "369a81555273f82849d27613ad87249a89958c5c"
+    },
+    {
+      "path": "assets/blogs/april-2026-horoscope-all-rashis.png",
+      "size": 2100554,
+      "sha": "5db7a15f09c5b93d6c49bf9218a7127f08323c13"
+    },
+    {
+      "path": "assets/blogs/april-2026-mulank-forecast-1-9.png",
+      "size": 2178516,
+      "sha": "7ce3f6f7419652adfc5615f5b84a822d2b25d261"
+    },
+    {
+      "path": "assets/blogs/august-12-2026-total-solar-eclipse.png",
+      "size": 1903721,
+      "sha": "4c9d56d09f5e73bf77537936859bbe780b9e1355"
+    },
+    {
+      "path": "assets/blogs/august-2026-horoscope-eclipse-season-rashis.png",
+      "size": 2171761,
+      "sha": "f9fcb64601b92c5e80257f6202b10028252c016c"
+    },
+    {
+      "path": "assets/blogs/august-2026-mulank-forecast-1-9.png",
+      "size": 2226042,
+      "sha": "a116fd1d0115743341afa8b75849bb793c4d42cd"
+    },
+    {
+      "path": "assets/blogs/bedroom-vastu-placement-sleep.png",
+      "size": 2002783,
+      "sha": "1e5b434cd6acaae9159f1373ddd9e2f06523552f"
+    },
+    {
+      "path": "assets/blogs/business-name-numerology-branding-limits.png",
+      "size": 2026153,
+      "sha": "bd96120070230f85ef167a2eccb1c7895e269353"
+    },
+    {
+      "path": "assets/blogs/digital-detox-spiritual-reset-plan.png",
+      "size": 2022955,
+      "sha": "6fa69be17cb4a1bb92003e466a79d5ec4bfa7db1"
+    },
+    {
+      "path": "assets/blogs/february-17-2026-annular-solar-eclipse-facts.png",
+      "size": 2101555,
+      "sha": "31f3f1bacdca882dfc7fc6f16d08c5e73a303e6e"
+    },
+    {
+      "path": "assets/blogs/february-2026-horoscope-all-rashis.png",
+      "size": 2779148,
+      "sha": "961b855cb2ea7fc0e48942e03050b5ec67563cbb"
+    },
+    {
+      "path": "assets/blogs/february-2026-mulank-forecast-1-9.png",
+      "size": 2750509,
+      "sha": "3b11cb7b511ce4f9a682de0ffe9c3bff8639f138"
+    },
+    {
+      "path": "assets/blogs/grounded-intention-setting-practice.png",
+      "size": 2223525,
+      "sha": "3988efcd72beb1de730ba007f4f72ceab8d69f54"
+    },
+    {
+      "path": "assets/blogs/guru-gochar-karka-june-2026.png",
+      "size": 1996695,
+      "sha": "35616fffa88aaf2aba11fbc7dc22885bab1cc025"
+    },
+    {
+      "path": "assets/blogs/historic-date-numerology-responsible-method.png",
+      "size": 2438805,
+      "sha": "016b3deed212cebd75229bd150500f60ef306d5b"
+    },
+    {
+      "path": "assets/blogs/home-office-vastu-focus-ergonomics.png",
+      "size": 1881393,
+      "sha": "4ebb68ebd33f637993bcf65c04bc4e992b98d5ee"
+    },
+    {
+      "path": "assets/blogs/january-2026-horoscope-all-rashis.png",
+      "size": 2145678,
+      "sha": "3d3fcd1e3d75dba184a717409417d20153880530"
+    },
+    {
+      "path": "assets/blogs/january-2026-mulank-forecast-1-9.png",
+      "size": 2495784,
+      "sha": "297b0577b814ff1dd2c36aeb0676af8711be2976"
+    },
+    {
+      "path": "assets/blogs/july-2026-horoscope-all-rashis.png",
+      "size": 2147308,
+      "sha": "7004d99cd0ef4469ad02c1a87d1e441955f256be"
+    },
+    {
+      "path": "assets/blogs/july-2026-mulank-forecast-1-9.png",
+      "size": 2622103,
+      "sha": "ce7b1cc7bd2762cb4d3b22a4aea0a2946a594da1"
+    },
+    {
+      "path": "assets/blogs/june-2026-horoscope-guru-gochar-rashis.png",
+      "size": 2514370,
+      "sha": "96e81367363c8737ab716d8d1110f2ca416b14d2"
+    },
+    {
+      "path": "assets/blogs/june-2026-mulank-forecast-1-9.png",
+      "size": 2474767,
+      "sha": "1fe09cdf6a5b787268db2000cf1d3cbaa3deda75"
+    },
+    {
+      "path": "assets/blogs/kitchen-vastu-placement-colours-safety.png",
+      "size": 2187535,
+      "sha": "c286ef44acfb14ca6e68876a99bb010e69912d8e"
+    },
+    {
+      "path": "assets/blogs/lucky-numbers-tradition-probability.png",
+      "size": 2265641,
+      "sha": "367ec73c2c8eceba1ca87917dd2cca000c3ead82"
+    },
+    {
+      "path": "assets/blogs/main-entrance-vastu-direction-safety-myths.png",
+      "size": 2176221,
+      "sha": "d232290dd46821366e834a7f5475a1c48769cbd4"
+    },
+    {
+      "path": "assets/blogs/march-2026-horoscope-all-rashis.png",
+      "size": 2349772,
+      "sha": "057a2b915f768cabd08eeca43364188adedddabb"
+    },
+    {
+      "path": "assets/blogs/march-2026-mulank-forecast-1-9.png",
+      "size": 2702281,
+      "sha": "dc0c8e05f0b4f22855714230a901b56364920c1d"
+    },
+    {
+      "path": "assets/blogs/march-3-2026-total-lunar-eclipse.png",
+      "size": 2118615,
+      "sha": "c9b06b24a8dba644d010bc8e1f8bd2fcc9b2b313"
+    },
+    {
+      "path": "assets/blogs/may-2026-horoscope-all-rashis.png",
+      "size": 1999094,
+      "sha": "d9214149e26b2263ed01ac5611324444497fd52e"
+    },
+    {
+      "path": "assets/blogs/may-2026-mulank-forecast-1-9.png",
+      "size": 2197254,
+      "sha": "c0f59b947c5da7ceef5e6e263ab012e879db8a41"
+    },
+    {
+      "path": "assets/blogs/mercury-retrograde-astronomy-astrology.png",
+      "size": 2196003,
+      "sha": "aac56dfa994c296ebf0d6d1d72925a3776c8af6a"
+    },
+    {
+      "path": "assets/blogs/mirror-placement-vastu-light-safety.png",
+      "size": 1833593,
+      "sha": "b9c24e9b687bdc3cb89e1b002356688cdab97ae4"
+    },
+    {
+      "path": "assets/blogs/mobile-number-numerology-claims-limits.png",
+      "size": 2036511,
+      "sha": "fa3ff30130e668738ab974fe3b756bc43e52824e"
+    },
+    {
+      "path": "assets/blogs/monsoon-vastu-home-safety-ventilation.png",
+      "size": 2365984,
+      "sha": "8d0d382109f1002bdb1ec4193d113b7d7c3ce9b2"
+    },
+    {
+      "path": "assets/blogs/mulank-1-9-strengths-blind-spots.png",
+      "size": 2435789,
+      "sha": "b3f3acb75a2a01bcfed5e889ccab4af56f072cae"
+    },
+    {
+      "path": "assets/blogs/mulank-1-meaning-strengths-challenges.png",
+      "size": 2564323,
+      "sha": "a51e45c49b073a72defa5c13f905d561294d98f6"
+    },
+    {
+      "path": "assets/blogs/mulank-2-meaning-strengths-challenges.png",
+      "size": 2139944,
+      "sha": "5ebb49b1917d3e545c6160006c49f84b91e18fbb"
+    },
+    {
+      "path": "assets/blogs/mulank-3-meaning-strengths-challenges.png",
+      "size": 2676206,
+      "sha": "878ccbd8aa7093fc49adfa240a554fddab25172b"
+    },
+    {
+      "path": "assets/blogs/mulank-4-meaning-strengths-challenges.png",
+      "size": 2274653,
+      "sha": "1b456a8fbe3c1c82bb1cfca56c2f1157e7742c3a"
+    },
+    {
+      "path": "assets/blogs/mulank-5-meaning-strengths-challenges.png",
+      "size": 2202791,
+      "sha": "c0d6b53f1f699dcf20760edef74b05e2ef295107"
+    },
+    {
+      "path": "assets/blogs/mulank-6-meaning-strengths-challenges.png",
+      "size": 2249866,
+      "sha": "c9fe02d39b5cfabdb40f6942e464a6b63483b66c"
+    },
+    {
+      "path": "assets/blogs/mulank-compatibility-marriage-limits.png",
+      "size": 2112594,
+      "sha": "80dd07d7f33dea7358737db1bd38262ec7cd91ac"
+    },
+    {
+      "path": "assets/blogs/mulank-compatibility-work-communication.png",
+      "size": 1567250,
+      "sha": "4ccbb92f61556e47bf9d587a4e240e1041f144db"
+    },
+    {
+      "path": "assets/blogs/mulank-parent-child-compatibility-no-labels.png",
+      "size": 1709509,
+      "sha": "d542b4069a9c3d6d8910fb10cc372b06bb6cbe40"
+    },
+    {
+      "path": "assets/blogs/mulank-vs-bhagyank-difference.png",
+      "size": 2156722,
+      "sha": "e4d7abdbfeb185c2607bcb764eb23fe77e229fc5"
+    },
+    {
+      "path": "assets/blogs/name-numerology-methods-limits.png",
+      "size": 2316869,
+      "sha": "bd033def7241ceb4a043b8ca7dab6abec312e916"
+    },
+    {
+      "path": "assets/blogs/new-year-vastu-home-reset-no-renovation.png",
+      "size": 2307668,
+      "sha": "1ae5d1d142522cc257715181af4699573f7e3286"
+    },
+    {
+      "path": "assets/blogs/numerology-compatibility-reflection-not-verdict.png",
+      "size": 1945914,
+      "sha": "f735412135b3def8aa657fb396afd96f62e0b433"
+    },
+    {
+      "path": "assets/blogs/personal-year-number-2026-calculation.png",
+      "size": 1802628,
+      "sha": "61d0345f24ae7584c0b39c1d7658a9788aab29d5"
+    },
+    {
+      "path": "assets/blogs/repeating-numbers-meaning-confirmation-bias.png",
+      "size": 1760079,
+      "sha": "5a24adb821497838377ca1aab5448e0c08039c11"
+    },
+    {
+      "path": "assets/blogs/shani-nakshatra-shift-may-2026-guide.png",
+      "size": 2068489,
+      "sha": "21b0a88985652980f245a181db2a6257de254387"
+    },
+    {
+      "path": "assets/blogs/spiritual-boundaries-empathy-wellbeing.png",
+      "size": 1981469,
+      "sha": "212e192d41505a4e42848b33bfdeb84ffcb08fa0"
+    },
+    {
+      "path": "assets/blogs/spiritual-journaling-prompts-clarity.png",
+      "size": 1689476,
+      "sha": "286cafb9c5c3c6c54d50d73964e6390e8953213c"
+    },
+    {
+      "path": "assets/blogs/vakri-retrograde-motion-vedic-astrology.png",
+      "size": 2221039,
+      "sha": "3b5b033fe8d606de9736c61e5746cd9d49262d19"
+    },
+    {
+      "path": "assets/blogs/vastu-rented-home-reversible-tips.png",
+      "size": 2137794,
+      "sha": "c13b3c15c442bc66c79172801ca6c36667c862f3"
+    },
+    {
+      "path": "assets/blogs/what-is-gochar-vedic-astrology-guide.png",
+      "size": 2374858,
+      "sha": "1574165ac476f9f1147398ee7d4ecc19ec7f0cd4"
+    },
+    {
+      "path": "assets/blogs/what-is-mulank-how-to-calculate.png",
+      "size": 2631717,
+      "sha": "fa51c7233c2ab768d0d0da3630e37e0aa3e5e355"
+    },
+    {
+      "path": "assets/brochure/page-1.webp",
+      "size": 427462,
+      "sha": "83c12dacfa13ce5a50cb8c737979736c6a46c848"
+    },
+    {
+      "path": "assets/brochure/page-2.webp",
+      "size": 338346,
+      "sha": "62f9a9981125073704e8e39d873b7bbeb21b15a4"
+    },
+    {
+      "path": "assets/brochure/page-3.webp",
+      "size": 387876,
+      "sha": "7f6a1b40fde1b59db88e194865bd03fed30da440"
+    },
+    {
+      "path": "assets/brochure/page-4.webp",
+      "size": 390802,
+      "sha": "cd83fd8cd938ae7dcc86281e82dd7ad69cdc828d"
+    },
+    {
+      "path": "assets/brochure/page-5.webp",
+      "size": 426468,
+      "sha": "19cf8e9ccd343cbd732308593f39b0ccfab6b464"
+    },
+    {
+      "path": "assets/brochure/page-6.webp",
+      "size": 296128,
+      "sha": "7080da606ea3f08dc1af4073bedb5519a10c3a3a"
+    },
+    {
+      "path": "assets/brochure/page-7.webp",
+      "size": 349714,
+      "sha": "5641fbdfb0f9f25bb0880c91b95cf267b6ccd5dc"
+    },
+    {
+      "path": "assets/brochure/page-8.webp",
+      "size": 312986,
+      "sha": "e43742719b23216ea31c78359cad59abafa830b6"
+    },
+    {
+      "path": "assets/brochure/page-9.webp",
+      "size": 338482,
+      "sha": "897933f5b9e36cc34d44ff24d1b85f04d8692dae"
+    },
+    {
+      "path": "assets/ddeepa-khanna-shah.png",
+      "size": 2297565,
+      "sha": "a41d827aefd2e9756d77d4d52d28d54f67736a7e"
+    },
+    {
+      "path": "assets/js/astronomy.browser.min.js",
+      "size": 116424,
+      "sha": "3aa017acedcb4b0ee5a7d7dd3aa9b9218cdbbaac"
+    },
+    {
+      "path": "assets/products/clear-quartz-bracelet/clear-quartz-bracelet-01.png",
+      "size": 2474506,
+      "sha": "0a527f8cf53c7f263f72dab3cc3ba21764356515"
+    },
+    {
+      "path": "assets/products/clear-quartz-bracelet/clear-quartz-bracelet-02.png",
+      "size": 2143955,
+      "sha": "c32a41267268ad0218c9f93c79cf0708434d1659"
+    },
+    {
+      "path": "assets/products/green-aventurine-bracelet/green-aventurine-bracelet-01.png",
+      "size": 2430122,
+      "sha": "518507f8a888c584ceeaac0b87725b9bf03e2f26"
+    },
+    {
+      "path": "assets/products/green-aventurine-bracelet/green-aventurine-bracelet-02.png",
+      "size": 2391149,
+      "sha": "92e33a4564f3eba46decd6f4a0469ac9851210c5"
+    },
+    {
+      "path": "assets/products/lapis-lazuli-bracelet/lapis-lazuli-bracelet-01.png",
+      "size": 3649682,
+      "sha": "0e6c20ee71f94ce0e2cff79182b1f8176311041d"
+    },
+    {
+      "path": "assets/products/lapis-lazuli-bracelet/lapis-lazuli-bracelet-02.png",
+      "size": 2550679,
+      "sha": "38465f3e634df5c0ebca52287eb9e1e09dc4c7ee"
+    },
+    {
+      "path": "assets/products/mohini-ittar/mohini-ittar-01.png",
+      "size": 3034941,
+      "sha": "247e0014d05977f023e1d7a9bb745c5f361938d3"
+    },
+    {
+      "path": "assets/products/mohini-ittar/mohini-ittar-02.png",
+      "size": 3322323,
+      "sha": "5786b203f1b4f94f5d59ad538cc6329b2676bea4"
+    },
+    {
+      "path": "assets/products/moon-stone-bracelet/moon-stone-bracelet-01.png",
+      "size": 3343413,
+      "sha": "22c9ddc2ff1569f6821f5f729046d1d3f974b8b9"
+    },
+    {
+      "path": "assets/products/moon-stone-bracelet/moon-stone-bracelet-02.png",
+      "size": 2212901,
+      "sha": "1462ab61256ddcc2df01bcd5d27f23b62aedf8cf"
+    },
+    {
+      "path": "assets/products/pyrite-bracelet/pyrite-bracelet-01.png",
+      "size": 3536237,
+      "sha": "21c55259238c642ea2f7f13b02913c02884e6e60"
+    },
+    {
+      "path": "assets/products/pyrite-bracelet/pyrite-bracelet-02.png",
+      "size": 3438904,
+      "sha": "497eebd3665d55df5111efbaab718fcf68eb0070"
+    },
+    {
+      "path": "assets/products/raksha-nazar-kavach/raksha-nazar-kavach-01.png",
+      "size": 3015435,
+      "sha": "25200b4a9c43da687ad263734e357d9d49fd6972"
+    },
+    {
+      "path": "assets/products/raksha-nazar-kavach/raksha-nazar-kavach-02.png",
+      "size": 3282034,
+      "sha": "2991db345de6fca762362b0554237880bf0e9756"
+    },
+    {
+      "path": "assets/products/raksha-nazar-kavach/raksha-nazar-kavach-03.png",
+      "size": 2302952,
+      "sha": "93b716c93a1b2921ca89d5d2a48a6cd4f5ea783b"
+    },
+    {
+      "path": "assets/products/red-hakik-bracelet/red-hakik-bracelet-01.png",
+      "size": 3625049,
+      "sha": "06c7e820623b552b53abcf16c5aaec75c2541d22"
+    },
+    {
+      "path": "assets/products/red-hakik-bracelet/red-hakik-bracelet-02.png",
+      "size": 3470957,
+      "sha": "61d8c346146ec3d7a241e7073e616aadeadf2631"
+    },
+    {
+      "path": "assets/products/red-jesper-bracelet/red-jesper-bracelet-01.png",
+      "size": 2360110,
+      "sha": "c268c72c2519f201d0f5e3c14a164083a52551b4"
+    },
+    {
+      "path": "assets/products/red-jesper-bracelet/red-jesper-bracelet-02.png",
+      "size": 2554040,
+      "sha": "1112789ce20959aa7ba4bc76c2053bb7ce1487c2"
+    },
+    {
+      "path": "assets/products/rose-quartz-bracelet/rose-quartz-bracelet-01.png",
+      "size": 3520866,
+      "sha": "9cd6b0276f3b7ee77c39c496a61743898c8b039c"
+    },
+    {
+      "path": "assets/products/rose-quartz-bracelet/rose-quartz-bracelet-02.png",
+      "size": 3520866,
+      "sha": "9cd6b0276f3b7ee77c39c496a61743898c8b039c"
+    },
+    {
+      "path": "assets/products/rose-quartz-bracelet/rose-quartz-bracelet-03.png",
+      "size": 3821390,
+      "sha": "e4b5907a285bb3ebc61b2bd62444b719cff3ea63"
+    },
+    {
+      "path": "assets/products/rose-quartz-bracelet/rose-quartz-bracelet-04.png",
+      "size": 3691064,
+      "sha": "a6d45b87eddc08dace3c256022b7206050f586f7"
+    },
+    {
+      "path": "assets/products/sarkar-kajal/sarkar-kajal-01.png",
+      "size": 3127752,
+      "sha": "eaf1d0569253694cab44381446091d86a677e69b"
+    },
+    {
+      "path": "assets/products/sarkar-kajal/sarkar-kajal-02.png",
+      "size": 2965442,
+      "sha": "63fa4ce1c55852f8c8a31e9cbc0e374ab7ac08b4"
+    },
+    {
+      "path": "assets/products/sarkar-kajal/sarkar-kajal-03.png",
+      "size": 3237830,
+      "sha": "d0a13af7c6695f6d83942429d95e9136017f4452"
+    },
+    {
+      "path": "assets/products/tiger-eye-bracelet/tiger-eye-bracelet-01.png",
+      "size": 2517617,
+      "sha": "65fe87b5d43f90aeb0a011c41c59ba6a120a84f3"
+    },
+    {
+      "path": "assets/products/tiger-eye-bracelet/tiger-eye-bracelet-02.png",
+      "size": 3369303,
+      "sha": "6b6af247318fd4a88ff57851f5711266ff7333ac"
+    },
+    {
+      "path": "assets/products/yellow-citrine-bracelet/yellow-citrine-bracelet-01.png",
+      "size": 2682352,
+      "sha": "62bc30e947e4a732a06995f3d62310c2240ba3f4"
+    },
+    {
+      "path": "assets/products/yellow-citrine-bracelet/yellow-citrine-bracelet-02.png",
+      "size": 3622064,
+      "sha": "be880fa94988697021a2c9c8a0a4909102492a9f"
+    },
+    {
+      "path": "assets/siaos-logo.webp",
+      "size": 129210,
+      "sha": "e45642b897559161eb07031d3b1fbbc0a5129ed0"
+    },
+    {
+      "path": "assets/siaos-official-logo.png",
+      "size": 2415246,
+      "sha": "35549ab1b3c6e1084f22990838f159de9366e53a"
+    },
+    {
+      "path": "assets/surat-map-illustration.png",
+      "size": 2429249,
+      "sha": "ed4bcbad7f3465cd348de412cf7745196fcda048"
+    },
+    {
+      "path": "assets/surat-map-illustration.webp",
+      "size": 185628,
+      "sha": "0967108a2dd16d3badee24f3ea51ed31ca6915e5"
+    },
+    {
+      "path": "assets/tarot/ace-of-cups.png",
+      "size": 3332307,
+      "sha": "686e59a8054c2fa4239f9b92ce03d9456165ccac"
+    },
+    {
+      "path": "assets/tarot/ace-of-pentacles.png",
+      "size": 3560894,
+      "sha": "c674a5370e0ef15194d50f8d6aa22ac9efaea101"
+    },
+    {
+      "path": "assets/tarot/ace-of-swords.png",
+      "size": 3354084,
+      "sha": "539f93039bc63704d31094409997090700b741e3"
+    },
+    {
+      "path": "assets/tarot/ace-of-wands.png",
+      "size": 3480357,
+      "sha": "a931ce8d8b37edee06251185f4f0021b8c546ea3"
+    },
+    {
+      "path": "assets/tarot/death.png",
+      "size": 3237402,
+      "sha": "14a8f2b488015bc89d4271faac764553921d0fb6"
+    },
+    {
+      "path": "assets/tarot/eight-of-cups.png",
+      "size": 3125120,
+      "sha": "7873bcb1c000bdcba63a5d80cbb04c3ef348f652"
+    },
+    {
+      "path": "assets/tarot/eight-of-pentacles.png",
+      "size": 3154237,
+      "sha": "6b2c7d6220ab3058c9900c7ba50b9beb9187f332"
+    },
+    {
+      "path": "assets/tarot/eight-of-swords.png",
+      "size": 3248897,
+      "sha": "72ab8db41465aa3bd98d3b6250c2b1db7457724f"
+    },
+    {
+      "path": "assets/tarot/eight-of-wands.png",
+      "size": 3304089,
+      "sha": "03e4534f64d31afeaae9108564f3e92fed95f55f"
+    },
+    {
+      "path": "assets/tarot/five-of-cups.png",
+      "size": 3117819,
+      "sha": "4ba8937c26fd66a7db9bc9d27bed4cf92d49f99e"
+    },
+    {
+      "path": "assets/tarot/five-of-pentacles.png",
+      "size": 3311653,
+      "sha": "1b6ae38609718b4ab4969f02387dd300ee9a1f22"
+    },
+    {
+      "path": "assets/tarot/five-of-swords.png",
+      "size": 3334414,
+      "sha": "1e71b8b3d0e1184e2a420468ca08c0a8ee4b8ce8"
+    },
+    {
+      "path": "assets/tarot/five-of-wands.png",
+      "size": 3445973,
+      "sha": "638fe80504788a65f272a2bb2913dfeba82d3db3"
+    },
+    {
+      "path": "assets/tarot/four-of-cups.png",
+      "size": 3261673,
+      "sha": "18545dfe30f63686aa863f542c59d51cc0e5aa9c"
+    },
+    {
+      "path": "assets/tarot/four-of-pentacles.png",
+      "size": 3316810,
+      "sha": "19c43c37420201d4bb4eed45a2643f67d7483734"
+    },
+    {
+      "path": "assets/tarot/four-of-swords.png",
+      "size": 3183255,
+      "sha": "01dd4ace670bffb6204f5c16e8763e81c5833e14"
+    },
+    {
+      "path": "assets/tarot/four-of-wands.png",
+      "size": 3313173,
+      "sha": "42a9b1b7f6dae8e08a0263d29917e72de86039ed"
+    },
+    {
+      "path": "assets/tarot/judgement.png",
+      "size": 3559976,
+      "sha": "948a7b5f1ef2df7678992eec4b98d0fa84c773bf"
+    },
+    {
+      "path": "assets/tarot/justice.png",
+      "size": 3386505,
+      "sha": "03427059f75a826c603a500bbfb72802157423b5"
+    },
+    {
+      "path": "assets/tarot/king-of-cups.png",
+      "size": 3262866,
+      "sha": "7fd16171b7cf1ce0f558c39930a6334194c7fd11"
+    },
+    {
+      "path": "assets/tarot/king-of-pentacles.png",
+      "size": 3549063,
+      "sha": "6f3d9225e108f35588c16283e08231f9e5240860"
+    },
+    {
+      "path": "assets/tarot/king-of-swords.png",
+      "size": 3400373,
+      "sha": "47b407cc78b3bdb89cf9975376fbf864a392853c"
+    },
+    {
+      "path": "assets/tarot/king-of-wands.png",
+      "size": 3359643,
+      "sha": "2cf8f0acd36c182655ef8661a419cf8d04b2ce5a"
+    },
+    {
+      "path": "assets/tarot/knight-of-cups.png",
+      "size": 3456427,
+      "sha": "d3d03617f790ab53bd2a01e5afccbce3562da992"
+    },
+    {
+      "path": "assets/tarot/knight-of-pentacles.png",
+      "size": 3201096,
+      "sha": "7772a63180a437df1390b2244cae00bda0e42e92"
+    },
+    {
+      "path": "assets/tarot/knight-of-swords.png",
+      "size": 3468180,
+      "sha": "39f63d17150a72bb40e1c2121ce3d237dbe1e8c3"
+    },
+    {
+      "path": "assets/tarot/knight-of-wands.png",
+      "size": 3206265,
+      "sha": "73839be15f8a96da9dc8294721e36e9020e63ef7"
+    },
+    {
+      "path": "assets/tarot/nine-of-cups.png",
+      "size": 3497941,
+      "sha": "0c10b8300f84791831192618536c0b71254df866"
+    },
+    {
+      "path": "assets/tarot/nine-of-pentacles.png",
+      "size": 3467467,
+      "sha": "6a0a538e3a5827668f11e589890283307c79c77a"
+    },
+    {
+      "path": "assets/tarot/nine-of-swords.png",
+      "size": 2955122,
+      "sha": "71cf9e663449ba7b36e4ef203ddb913a4c363611"
+    },
+    {
+      "path": "assets/tarot/nine-of-wands.png",
+      "size": 3250731,
+      "sha": "d3bda069674915ea9aa253229c428d681e3c0a99"
+    },
+    {
+      "path": "assets/tarot/page-of-cups.png",
+      "size": 3255164,
+      "sha": "133c007b4259edf9d014d8bbf5db057f632d27af"
+    },
+    {
+      "path": "assets/tarot/page-of-pentacles.png",
+      "size": 3300729,
+      "sha": "b34b92d26a732441fb257c3cb009f73cab0485eb"
+    },
+    {
+      "path": "assets/tarot/page-of-swords.png",
+      "size": 3121683,
+      "sha": "1022801af1612aec055c92c984cda24ccc2a7455"
+    },
+    {
+      "path": "assets/tarot/page-of-wands.png",
+      "size": 3281348,
+      "sha": "eaa8a81e20654b5b3d421c8d867c35171bb13cd7"
+    },
+    {
+      "path": "assets/tarot/queen-of-cups.png",
+      "size": 3291640,
+      "sha": "4655c6c090983f77346b9174fe803d4a2694813c"
+    },
+    {
+      "path": "assets/tarot/queen-of-pentacles.png",
+      "size": 3314891,
+      "sha": "bc3ce2057193db74d8f948826f4e86fe8faa03a3"
+    },
+    {
+      "path": "assets/tarot/queen-of-swords.png",
+      "size": 3458160,
+      "sha": "03acf8d79006bab2263bc9d9d507257c1f319218"
+    },
+    {
+      "path": "assets/tarot/queen-of-wands.png",
+      "size": 3418593,
+      "sha": "18cda040cdea24935b61cfc2feeee10313eaa02f"
+    },
+    {
+      "path": "assets/tarot/seven-of-cups.png",
+      "size": 3614427,
+      "sha": "2855f8d4cbcefa101f21aa904442e32334e11b1d"
+    },
+    {
+      "path": "assets/tarot/seven-of-pentacles.png",
+      "size": 3647470,
+      "sha": "e4b0a169993cd821d42d77349703242d49923d41"
+    },
+    {
+      "path": "assets/tarot/seven-of-swords.png",
+      "size": 3354085,
+      "sha": "2eb529b34d440de002458b7577536cd96d843504"
+    },
+    {
+      "path": "assets/tarot/seven-of-wands.png",
+      "size": 3249792,
+      "sha": "fbcf8739aa9d886840ac8a5011ebbc1060079c6a"
+    },
+    {
+      "path": "assets/tarot/six-of-cups.png",
+      "size": 3377299,
+      "sha": "770a11ecf874387426e5a1338d9e699af2708fe9"
+    },
+    {
+      "path": "assets/tarot/six-of-pentacles.png",
+      "size": 3316292,
+      "sha": "c15dc1255f94d87ea45c25947561ee65450dc0e1"
+    },
+    {
+      "path": "assets/tarot/six-of-swords.png",
+      "size": 3148598,
+      "sha": "94046903f427fe093bbc17c7f555bbeb2b1e1abb"
+    },
+    {
+      "path": "assets/tarot/six-of-wands.png",
+      "size": 3214816,
+      "sha": "f39d6bd645deb901a04054e61f3524e622b6c94a"
+    },
+    {
+      "path": "assets/tarot/strength.png",
+      "size": 3169116,
+      "sha": "d4f34f3a882fde2656d7ae7e560a0492c9410501"
+    },
+    {
+      "path": "assets/tarot/temperance.png",
+      "size": 3491636,
+      "sha": "63e5150dcea3f45f91e09002b4cb829d0a738d85"
+    },
+    {
+      "path": "assets/tarot/ten-of-cups.png",
+      "size": 3234454,
+      "sha": "45149e6fb34ecdc7b0f87be5e8a9aabee863b2b1"
+    },
+    {
+      "path": "assets/tarot/ten-of-pentacles.png",
+      "size": 3619345,
+      "sha": "26b82433616272c725e18073577dadc1ad0e12fb"
+    },
+    {
+      "path": "assets/tarot/ten-of-swords.png",
+      "size": 2901359,
+      "sha": "1a46b2b77f976358393d9fa804d84a58e7ed41fc"
+    },
+    {
+      "path": "assets/tarot/ten-of-wands.png",
+      "size": 3435199,
+      "sha": "80b7b4a3f7b5bf2e02a365186bc9da32ddc2e628"
+    },
+    {
+      "path": "assets/tarot/the-chariot.png",
+      "size": 3279128,
+      "sha": "4a92647f050f8bc22a239413967fc0ef36cefefd"
+    },
+    {
+      "path": "assets/tarot/the-devil.png",
+      "size": 3212626,
+      "sha": "0cb35f33166a6f7793259debc69237c789b4a9e5"
+    },
+    {
+      "path": "assets/tarot/the-emperor.png",
+      "size": 3432439,
+      "sha": "72a5be7f1e011a71c1bd93f442f457be6b5c3ef4"
+    },
+    {
+      "path": "assets/tarot/the-empress.png",
+      "size": 3911075,
+      "sha": "4a031bfe4f38d3b64553a46be4d0b992ed620bf4"
+    },
+    {
+      "path": "assets/tarot/the-fool.png",
+      "size": 3556311,
+      "sha": "e98d27eb7cb536fa9ba550172c741d73c3422b4d"
+    },
+    {
+      "path": "assets/tarot/the-hanged-man.png",
+      "size": 3175940,
+      "sha": "dc8224312974d436249e8a7a3c1d8cbe50bf7179"
+    },
+    {
+      "path": "assets/tarot/the-hermit.png",
+      "size": 3430815,
+      "sha": "7c17eb7004f440ebc31a2eafb37937e7f40ec278"
+    },
+    {
+      "path": "assets/tarot/the-hierophant.png",
+      "size": 3239571,
+      "sha": "3f36111aa26552c29095d8baab93257e7655ba31"
+    },
+    {
+      "path": "assets/tarot/the-high-priestess.png",
+      "size": 3381684,
+      "sha": "263799208faa7cf1fe18c44e3671a7c84c32093a"
+    },
+    {
+      "path": "assets/tarot/the-lovers.png",
+      "size": 3367783,
+      "sha": "a366c5fdccc0eef8339b95faa323547a4fd81d8e"
+    },
+    {
+      "path": "assets/tarot/the-magician.png",
+      "size": 3454421,
+      "sha": "1fe5b1d7b29c9cf43f774a66205dd41d5d337ba6"
+    },
+    {
+      "path": "assets/tarot/the-moon.png",
+      "size": 3333058,
+      "sha": "3994cac270e6a1049e5ea90565e879f70f62c628"
+    },
+    {
+      "path": "assets/tarot/the-star.png",
+      "size": 3772921,
+      "sha": "8c88f2dc29aa69618f0d69367c38a58a8832a527"
+    },
+    {
+      "path": "assets/tarot/the-sun.png",
+      "size": 3363773,
+      "sha": "dccb538865f4e249d989851d28aac3078b6da9a6"
+    },
+    {
+      "path": "assets/tarot/the-tower.png",
+      "size": 3185403,
+      "sha": "fcca98944c5113f510843c44a7e7aa3c4891a46d"
+    },
+    {
+      "path": "assets/tarot/the-world.png",
+      "size": 3468409,
+      "sha": "1042e22931f3173f97a05a5622fc85839fca46c6"
+    },
+    {
+      "path": "assets/tarot/three-of-cups.png",
+      "size": 3389789,
+      "sha": "a36000582ace8af3451660db93e2d4119385952f"
+    },
+    {
+      "path": "assets/tarot/three-of-pentacles.png",
+      "size": 3388199,
+      "sha": "3bee99c627ef27d15e41e9417f87aa70fea293b9"
+    },
+    {
+      "path": "assets/tarot/three-of-swords.png",
+      "size": 3266802,
+      "sha": "32966222114be06571de7a87fc6ef1d50e162488"
+    },
+    {
+      "path": "assets/tarot/three-of-wands.png",
+      "size": 3252037,
+      "sha": "0b0c16663f9fe0ab050b02b0cbc9c99551197f63"
+    },
+    {
+      "path": "assets/tarot/two-of-cups.png",
+      "size": 3202434,
+      "sha": "0818cd51663930c97c8458e7b1df452cc1ab5977"
+    },
+    {
+      "path": "assets/tarot/two-of-pentacles.png",
+      "size": 3260381,
+      "sha": "3f8150ea58a6223c9a936e22def5460bb6ac2813"
+    },
+    {
+      "path": "assets/tarot/two-of-swords.png",
+      "size": 3209227,
+      "sha": "92af338a50389e81d575980e83bdb718c6e37fb7"
+    },
+    {
+      "path": "assets/tarot/two-of-wands.png",
+      "size": 3182039,
+      "sha": "7193cdbfbd55cf0b2f0935776d701a7286ce1693"
+    },
+    {
+      "path": "assets/tarot/wheel-of-fortune.png",
+      "size": 3551970,
+      "sha": "e3fc693ba677e9354e2e5e83023be44843733be8"
+    },
+    {
+      "path": "august-12-2026-total-solar-eclipse.html",
+      "size": 5859,
+      "sha": "9d3086e15fed1d2f63b9e496d904c26b27ba16f1"
+    },
+    {
+      "path": "august-2026-horoscope-eclipse-season-rashis.html",
+      "size": 13930,
+      "sha": "3e536f225aceaa201dc0ee90bf689d67b3ed168b"
+    },
+    {
+      "path": "august-2026-mulank-forecast-1-9.html",
+      "size": 11712,
+      "sha": "5241685c4e3ee8bb9d0b27757c323da06911f8bb"
+    },
+    {
+      "path": "auth-config.example.js",
+      "size": 204,
+      "sha": "05b264a75fb39afbd55e724f682507b6e36dfe37"
+    },
+    {
+      "path": "auth-config.js",
+      "size": 280,
+      "sha": "ed9c67ec63bf0413e8f2f0c90f717a14059f7591"
+    },
+    {
+      "path": "auth-ui.js",
+      "size": 2508,
+      "sha": "84933b367ac98bf9af3a6c9891a74afb50a19f06"
+    },
+    {
+      "path": "bedroom-vastu-placement-sleep.html",
+      "size": 5633,
+      "sha": "19dbf365a171751d94348406daa8ba26fa13a54b"
+    },
+    {
+      "path": "blog-data.js",
+      "size": 40976,
+      "sha": "198ce6f5076c70d18097ff95755d3119b17fd6ef"
+    },
+    {
+      "path": "blog-lunar-eclipse-august-2026.html",
+      "size": 6071,
+      "sha": "fff14a9d05ba3bbefbdd1f4ea4fd428364091abd"
+    },
+    {
+      "path": "blogs.html",
+      "size": 3162,
+      "sha": "fa5cd5835f93e5a3337b5d7e37f0c47df9cadb61"
+    },
+    {
+      "path": "blogs.js",
+      "size": 2758,
+      "sha": "28d48de9f57c64cdb4042820e312a0fe9f0326f8"
+    },
+    {
+      "path": "booking.html",
+      "size": 3116,
+      "sha": "4f55860eaf29e0e0cc99cfe391572eea18d1d90a"
+    },
+    {
+      "path": "booking.js",
+      "size": 19435,
+      "sha": "3488c5a394346fcc9a712bc72ceb1f6b40259213"
+    },
+    {
+      "path": "brochure.html",
+      "size": 2720,
+      "sha": "0e5c09ffe4f0eb4360287c50d42e2ab6b5234287"
+    },
+    {
+      "path": "business-name-numerology-branding-limits.html",
+      "size": 5439,
+      "sha": "934b330a204eea325171ba9270638872859b6529"
+    },
+    {
+      "path": "compatibility-report.html",
+      "size": 1527,
+      "sha": "1c08c3a9cb2c8951b94fe07013d02b7b74a78a2e"
+    },
+    {
+      "path": "compatibility-report.js",
+      "size": 2086,
+      "sha": "4ff39b2597bcbb8ac857ceac09de1ab79f29b8be"
+    },
+    {
+      "path": "compatibility.js",
+      "size": 6722,
+      "sha": "0822119685363aeef22f1bb720528b28f113633b"
+    },
+    {
+      "path": "digital-detox-spiritual-reset-plan.html",
+      "size": 5465,
+      "sha": "c78eb71afc79930aa697666f668a6e0973a007a8"
+    },
+    {
+      "path": "face-reading.html",
+      "size": 1548,
+      "sha": "7f301b42dcebeb50634afb84587717c020cc2231"
+    },
+    {
+      "path": "february-17-2026-annular-solar-eclipse-facts.html",
+      "size": 5763,
+      "sha": "51239a859ae5c786ec248d3bcfb625e73b584edd"
+    },
+    {
+      "path": "february-2026-horoscope-all-rashis.html",
+      "size": 13887,
+      "sha": "70f00416b9e6ee3e8dddaf75d795962c6b526e04"
+    },
+    {
+      "path": "february-2026-mulank-forecast-1-9.html",
+      "size": 11711,
+      "sha": "c3966eb850600ac0140a431f3861b5cc3201eb76"
+    },
+    {
+      "path": "grounded-intention-setting-practice.html",
+      "size": 5591,
+      "sha": "60a7792cc2d5d760235af5d51c924b715dfd8d05"
+    },
+    {
+      "path": "guru-gochar-karka-june-2026.html",
+      "size": 5716,
+      "sha": "54a66e5952d93937cc037e93bf1f054edb73d2c6"
+    },
+    {
+      "path": "historic-date-numerology-responsible-method.html",
+      "size": 5602,
+      "sha": "9686189dbae340ca96189ec59dfd002263b56aba"
+    },
+    {
+      "path": "home-office-vastu-focus-ergonomics.html",
+      "size": 5640,
+      "sha": "9f889c3cb2c05fda4f1da500e2518b07c7d1aea3"
+    },
+    {
+      "path": "index.html",
+      "size": 21776,
+      "sha": "fbfc63164dbd26c5537dc7531df49e65d6882700"
+    },
+    {
+      "path": "january-2026-horoscope-all-rashis.html",
+      "size": 13807,
+      "sha": "363b6869eb4fbce4fb0a3761d147aae3776218e5"
+    },
+    {
+      "path": "january-2026-mulank-forecast-1-9.html",
+      "size": 11775,
+      "sha": "c997a6f4e16267fa8dba640971b0759d1140f046"
+    },
+    {
+      "path": "july-2026-horoscope-all-rashis.html",
+      "size": 13820,
+      "sha": "7b6e4f3e7db045d3e1dea1d9ed2c81ddd018773b"
+    },
+    {
+      "path": "july-2026-mulank-forecast-1-9.html",
+      "size": 11679,
+      "sha": "f83fba4f922fb7e0abd1c1b00987b8db2f28d25e"
+    },
+    {
+      "path": "june-2026-horoscope-guru-gochar-rashis.html",
+      "size": 13847,
+      "sha": "6f63ea5e1ba542bccf8f3dadf9b3d9c52bc08670"
+    },
+    {
+      "path": "june-2026-mulank-forecast-1-9.html",
+      "size": 11684,
+      "sha": "e8ef7afdcbfa24d8334474424662214ea1014568"
+    },
+    {
+      "path": "kitchen-vastu-placement-colours-safety.html",
+      "size": 5619,
+      "sha": "845003d93cf6434180eb1636ea0be2b423747c8c"
+    },
+    {
+      "path": "kundli.html",
+      "size": 1548,
+      "sha": "7f301b42dcebeb50634afb84587717c020cc2231"
+    },
+    {
+      "path": "login.html",
+      "size": 6394,
+      "sha": "2cf2d5f7074645c1c3348451706575cd97211bdc"
+    },
+    {
+      "path": "login.js",
+      "size": 4582,
+      "sha": "40a31c274b4f2dbab67e799155ead30df039457a"
+    },
+    {
+      "path": "lucky-numbers-tradition-probability.html",
+      "size": 5332,
+      "sha": "aa7c1593bae76c8e23a5e91f4a412533ee91807a"
+    },
+    {
+      "path": "main-entrance-vastu-direction-safety-myths.html",
+      "size": 5650,
+      "sha": "605d8932f72224270229af549041ba930ea1bb2a"
+    },
+    {
+      "path": "march-2026-horoscope-all-rashis.html",
+      "size": 13822,
+      "sha": "78d33a1b5a7d2aa4f19645d0666d3d493b3f55b4"
+    },
+    {
+      "path": "march-2026-mulank-forecast-1-9.html",
+      "size": 11696,
+      "sha": "cc8f17cc901d417681a1acf88ebbe37e5e2a3cdc"
+    },
+    {
+      "path": "march-3-2026-total-lunar-eclipse.html",
+      "size": 5735,
+      "sha": "6a815a8aa62051009979c9113090908ba6a13292"
+    },
+    {
+      "path": "may-2026-horoscope-all-rashis.html",
+      "size": 13794,
+      "sha": "1939e3c52e9320674704d3d5fe821290a05865db"
+    },
+    {
+      "path": "may-2026-mulank-forecast-1-9.html",
+      "size": 11647,
+      "sha": "64c068250ed0598b06166c2ab9bc25ef4dfd14e9"
+    },
+    {
+      "path": "mercury-retrograde-astronomy-astrology.html",
+      "size": 5623,
+      "sha": "402d55a997bcfc1e01246320247dea8dfcb93ce7"
+    },
+    {
+      "path": "mirror-placement-vastu-light-safety.html",
+      "size": 5650,
+      "sha": "46587747e09f31a3e3d3aea459a05cc106836701"
+    },
+    {
+      "path": "mobile-number-numerology-claims-limits.html",
+      "size": 5452,
+      "sha": "f71e15544fb8a1b42cadc7089652c26328635685"
+    },
+    {
+      "path": "monsoon-vastu-home-safety-ventilation.html",
+      "size": 5665,
+      "sha": "a971fe15630463f810f2ecf9a80dac058394cc6c"
+    },
+    {
+      "path": "muhurat.html",
+      "size": 7802,
+      "sha": "7509128f624740ffc4a6e7fd6230bd2fb960a9f8"
+    },
+    {
+      "path": "muhurat.js",
+      "size": 14107,
+      "sha": "c3e44334db89febdf02cf78c012f36f438bafa3a"
+    },
+    {
+      "path": "mulank-1-9-strengths-blind-spots.html",
+      "size": 5643,
+      "sha": "3858a56077393064496c60640f38be55641a6cea"
+    },
+    {
+      "path": "mulank-1-meaning-strengths-challenges.html",
+      "size": 5563,
+      "sha": "f27e961b0bb8e44c765bae1522fc888d3b855bef"
+    },
+    {
+      "path": "mulank-2-meaning-strengths-challenges.html",
+      "size": 5523,
+      "sha": "e207b159180cec668f7def1b8a4470a9898b2ee5"
+    },
+    {
+      "path": "mulank-3-meaning-strengths-challenges.html",
+      "size": 5531,
+      "sha": "46e357065db52824778545fc3f4ca461d62ca0ee"
+    },
+    {
+      "path": "mulank-4-meaning-strengths-challenges.html",
+      "size": 5559,
+      "sha": "3bb54812609624c045dab3d4f847ff72b3d51ac1"
+    },
+    {
+      "path": "mulank-5-meaning-strengths-challenges.html",
+      "size": 5526,
+      "sha": "1140c27de07443bf7b684dfc0a2b709a62cbf5d3"
+    },
+    {
+      "path": "mulank-6-meaning-strengths-challenges.html",
+      "size": 5560,
+      "sha": "f5d380a298f96b7d3f5e0d5b49bfa64ccba36e9e"
+    },
+    {
+      "path": "mulank-compatibility-marriage-limits.html",
+      "size": 5591,
+      "sha": "774c3ee9220ef9aaf55aa629f64ec0a005680801"
+    },
+    {
+      "path": "mulank-compatibility-work-communication.html",
+      "size": 5531,
+      "sha": "beebb3c0e7abdf32b89bd9b0706a1ae4a0eb3bcd"
+    },
+    {
+      "path": "mulank-parent-child-compatibility-no-labels.html",
+      "size": 5654,
+      "sha": "9258b05c33870874260f1a08e78ce95d5cd41c51"
+    },
+    {
+      "path": "mulank-vs-bhagyank-difference.html",
+      "size": 5298,
+      "sha": "d0a757c3f5ef8346c907ca9004bda098540251b2"
+    },
+    {
+      "path": "name-numerology-methods-limits.html",
+      "size": 5367,
+      "sha": "23a10ad951099360bbcacf612fc66ab6b26939d1"
+    },
+    {
+      "path": "new-year-vastu-home-reset-no-renovation.html",
+      "size": 5791,
+      "sha": "6407148daf4632985f9a48ba8cfc9e0dd1a52836"
+    },
+    {
+      "path": "numerology-compatibility-reflection-not-verdict.html",
+      "size": 5585,
+      "sha": "68a2678740bb24efe2f547c3b2711128cac09f6d"
+    },
+    {
+      "path": "numerology.html",
+      "size": 1548,
+      "sha": "7f301b42dcebeb50634afb84587717c020cc2231"
+    },
+    {
+      "path": "paranormal.html",
+      "size": 1548,
+      "sha": "7f301b42dcebeb50634afb84587717c020cc2231"
+    },
+    {
+      "path": "payment.html",
+      "size": 1562,
+      "sha": "f79f9002b7e976bea3bcad7e8a8095e1b7ac03d0"
+    },
+    {
+      "path": "payment.js",
+      "size": 7214,
+      "sha": "0bfd608bc4742be256a16e25eeb868d011298a4b"
+    },
+    {
+      "path": "personal-year-number-2026-calculation.html",
+      "size": 5490,
+      "sha": "198b1e29fcfeeebe7832d21a39c026c7083b3762"
+    },
+    {
+      "path": "product-detail.html",
+      "size": 992,
+      "sha": "067ad18b1e7649e9e2b8d6bf64743cf6e53a75a1"
+    },
+    {
+      "path": "product-detail.js",
+      "size": 10613,
+      "sha": "a4551575845a2105ac98e5e9f2b0cb88a50edc03"
+    },
+    {
+      "path": "products-data.js",
+      "size": 5538,
+      "sha": "7d6d895aa189e0b7fef942ef67aaca52ff8e6053"
+    },
+    {
+      "path": "products.html",
+      "size": 1502,
+      "sha": "69b5e3f996a92f071d243dbd7ac1e407bf85c186"
+    },
+    {
+      "path": "products.js",
+      "size": 824,
+      "sha": "81bf4bc71ca2b23a0604aedf0259651904b9136a"
+    },
+    {
+      "path": "repeating-numbers-meaning-confirmation-bias.html",
+      "size": 5454,
+      "sha": "c7a589edbeb5aeb1265e9d18b81be18aac35167d"
+    },
+    {
+      "path": "saved-reading.html",
+      "size": 1377,
+      "sha": "6ac9d0ec6c316aea56fe29dfeb84ab5cf1090efe"
+    },
+    {
+      "path": "saved-reading.js",
+      "size": 3732,
+      "sha": "03ca2d89950a6dd09aaf3077bb324f9b1dc33f7c"
+    },
+    {
+      "path": "saved-report.html",
+      "size": 1421,
+      "sha": "bfedb11eaee6ad08fd55262640c760fa6f9dbde3"
+    },
+    {
+      "path": "saved-report.js",
+      "size": 1449,
+      "sha": "040d61a3f90f4b1ff31aef1006b8c71c94631845"
+    },
+    {
+      "path": "service-page.js",
+      "size": 10837,
+      "sha": "4f06b218b7316ff5c1918b13303747fc5a7f3877"
+    },
+    {
+      "path": "shani-nakshatra-shift-may-2026-guide.html",
+      "size": 5698,
+      "sha": "2b1b9189d08c9594b4ec1ec0db07c14b9631b068"
+    },
+    {
+      "path": "site.js",
+      "size": 11692,
+      "sha": "7d2e7095abb7695466aedb09978f7b5a60e0bdfe"
+    },
+    {
+      "path": "spiritual-boundaries-empathy-wellbeing.html",
+      "size": 5391,
+      "sha": "a3753cddbb7838b8f79aa5bac62d4ead69ffa37d"
+    },
+    {
+      "path": "spiritual-journaling-prompts-clarity.html",
+      "size": 5417,
+      "sha": "e5622f621fb32b27b4131fd4d5168f7791d65694"
+    },
+    {
+      "path": "supabase/schema.sql",
+      "size": 18196,
+      "sha": "f405a8dd60de423e6dfcaa1f341cc4e2e545a3b5"
+    },
+    {
+      "path": "tarot-experience.js",
+      "size": 33310,
+      "sha": "a39957272fec1eebd86bcd2bf42b8f6f78dd8976"
+    },
+    {
+      "path": "tarot-report.html",
+      "size": 1555,
+      "sha": "f08c2c46326bc6054f3c8726e3d8f446bd7deeba"
+    },
+    {
+      "path": "tarot-report.js",
+      "size": 2443,
+      "sha": "a11f09fea992a803149b2c47ea4314fea6972d76"
+    },
+    {
+      "path": "tarot.html",
+      "size": 1548,
+      "sha": "7f301b42dcebeb50634afb84587717c020cc2231"
+    },
+    {
+      "path": "theme.css",
+      "size": 103433,
+      "sha": "e7194947c94be5e18412c06965894bb5778509e1"
+    },
+    {
+      "path": "tithi-calendar.js",
+      "size": 4283,
+      "sha": "e19b861f93104655f91af7aa46b482ecf9dcc7cf"
+    },
+    {
+      "path": "tithi-data.js",
+      "size": 136234,
+      "sha": "986c77ff4bf6ba0366fdc4aa86b83386aa139bd0"
+    },
+    {
+      "path": "vakri-retrograde-motion-vedic-astrology.html",
+      "size": 5585,
+      "sha": "96f3420e16e1b8b4cea5d47725ba358b31d1ddd9"
+    },
+    {
+      "path": "vastu-rented-home-reversible-tips.html",
+      "size": 5616,
+      "sha": "ad6024f403c8e490a23277360140e574b97c83bd"
+    },
+    {
+      "path": "vastu.html",
+      "size": 1548,
+      "sha": "7f301b42dcebeb50634afb84587717c020cc2231"
+    },
+    {
+      "path": "what-is-gochar-vedic-astrology-guide.html",
+      "size": 5802,
+      "sha": "e0491c624e8541e76702c32c537f7fcead1f9875"
+    },
+    {
+      "path": "what-is-mulank-how-to-calculate.html",
+      "size": 5848,
+      "sha": "ceb7c5691efb31f188b4d2914d9e26fbfa27c61a"
+    },
+    {
+      "path": "whatsapp_connector.js",
+      "size": 2078,
+      "sha": "6eb1fb45a9dbd521bd99430555ead351bbbd8bde"
+    }
+  ]
+}

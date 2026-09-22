@@ -163,6 +163,7 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
     if ([...document.scripts].some(script => script.src && new URL(script.src,location.href).pathname === requestedPath)) { resolve(); return; }
     const script = document.createElement('script'); script.src = src; script.onload = resolve; script.onerror = reject; document.head.append(script);
   });
+  loadScript(new URL('whatsapp_connector.js?v=20260920-2',base).href).catch(() => {});
   (async () => {
     await loadScript(new URL('auth-config.js?v=20260831-1',base).href);
     const config = window.SIAOS_AUTH_CONFIG || {};
@@ -179,7 +180,7 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
   const links=document.createElement('div');
   links.className='policy-footer';
   links.style.cssText='display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;margin-bottom:14px';
-  links.innerHTML='<a href="contact.html">Contact</a><a href="privacy-policy.html">Privacy</a><a href="terms.html">Terms</a><a href="shipping-policy.html">Shipping</a><a href="cancellation-policy.html">Cancellation</a><a href="refund-policy.html">Refunds</a>';
+  links.innerHTML='<a href="contact.html">Contact</a><a href="privacy-policy.html">Privacy</a><a href="terms.html">Terms</a><a href="shipping-policy.html">Shipping</a><a href="refund-policy.html">Refunds</a>';
   links.querySelectorAll('a').forEach(link=>{link.style.color='var(--gold,#caa43b)';link.style.textDecoration='underline';link.style.textUnderlineOffset='3px';});
   footer.prepend(links);
 })();
@@ -196,6 +197,6 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
     if(!window.SIAOS_AUTH_CONFIG)await load('auth-config.js');
     if(!window.SIAOS_AUTH_CONFIG?.backendUrl) return;
     await load('analytics.js');
-    if(document.querySelector('#videos'))await load('youtube-live.js');
+    // Live YouTube integration is not implemented; existing content stays visible.
   })().catch(()=>{});
 })();
