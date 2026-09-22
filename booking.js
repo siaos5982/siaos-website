@@ -64,7 +64,7 @@ async function initialiseAppointmentPicker(form){
     try{if(!window.SIAOSAccount?.client)throw new Error('Live appointment availability is temporarily unavailable.');const {data,error}=await window.SIAOSAccount.client.rpc('available_appointment_slots',{p_date:dateInput.value});if(error)throw error;slots=data||[];}
     catch(error){slotsTarget.textContent=error.message||'Availability could not be loaded.';return;}
     slotsTarget.innerHTML=slots.length?slots.map((slot,index)=>`<label class="appointment-slot"><input type="radio" name="appointmentStart" value="${slot.start_at}" ${index===0?'required':''}><span>${slot.label}</span></label>`).join(''):'<p>No appointments remain for this date. Please choose another date.</p>';
-    statusTarget.textContent='Live availability · your selected time is reserved when the booking request is saved.';
+    statusTarget.textContent='Live availability guide · your appointment is confirmed by SIAOS on WhatsApp.';
   });
 }
 
@@ -173,7 +173,7 @@ async function requireBookingAccount() {
   const session = await window.SIAOSAccount?.getSession();
   if (session) { bookingContent.hidden = false; return true; }
   const next = `${location.pathname.split('/').pop() || 'booking.html'}${location.search}${location.hash}`;
-  bookingAccessGate.innerHTML = `<div class="account-prompt-backdrop"></div><section class="account-prompt-card" role="dialog" aria-modal="true" aria-labelledby="bookingAccessTitle"><img src="assets/siaos-official-logo.png" alt="Official SIAOS crest"><span class="kicker">Account required</span><h2 id="bookingAccessTitle">Sign in before<br><em>booking a consultation.</em></h2><p>Your booking details and purchased reports are kept private inside your SIAOS account.</p><div class="account-prompt-actions"><a class="btn fill" href="login.html?mode=signup&next=${encodeURIComponent(next)}">Create Account</a><a class="btn" href="login.html?mode=signin&next=${encodeURIComponent(next)}">Sign In</a></div></section>`;
+  bookingAccessGate.innerHTML = `<div class="account-prompt-backdrop"></div><section class="account-prompt-card" role="dialog" aria-modal="true" aria-labelledby="bookingAccessTitle"><img src="assets/siaos-official-logo.png" alt="Official SIAOS crest"><span class="kicker">Account required</span><h2 id="bookingAccessTitle">Continue before<br><em>booking a consultation.</em></h2><p>Enter your email and mobile number once. No OTP or password is required.</p><div class="account-prompt-actions"><a class="btn fill" href="login.html?mode=signup&next=${encodeURIComponent(next)}">Create Account</a><a class="btn" href="login.html?mode=signin&next=${encodeURIComponent(next)}">Sign In</a></div></section>`;
   bookingAccessGate.hidden = false;
   document.body.classList.add('account-prompt-open');
   bookingAccessGate.querySelector('.btn.fill')?.focus();
@@ -227,12 +227,19 @@ function renderForm(service) {
     try {
       const details=Object.fromEntries(new FormData(form).entries());
       const session=await window.SIAOSAccount?.getSession();
-      if(!session?.access_token || !window.SIAOS_AUTH_CONFIG?.backendUrl) throw new Error('Verified login and the secure booking backend must be configured before booking.');
-      const {data:appointmentId,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});
-      if(error)throw error;
-      const booking={service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
-      const saved=await window.SIAOSApi('consultations',{method:'POST',body:booking});
-      booking.consultationId=saved.id;
+      if(!session)throw new Error('Create your account before sending a booking request.');
+      let booking;
+      if(session.access_token&&window.SIAOS_AUTH_CONFIG?.backendUrl){
+        const {data:appointmentId,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});
+        if(error)throw error;
+        booking={service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
+        const saved=await window.SIAOSApi('consultations',{method:'POST',body:booking});
+        booking.consultationId=saved.id;
+      }else{
+        const reference=`SIAOS-${Date.now().toString(36).toUpperCase()}`;
+        booking={id:reference,consultationId:reference,service,serviceName:services[service],relatedService:selectedRelatedService,appointmentStart:details.appointmentStart,start_at:details.appointmentStart,status:'requested',details,createdAt:new Date().toISOString()};
+        await window.SIAOSAccount.saveAppointment(booking);
+      }
       proceed.textContent='Opening WhatsApp…';
       location.assign(bookingWhatsAppUrl(booking));
     } catch(error) {

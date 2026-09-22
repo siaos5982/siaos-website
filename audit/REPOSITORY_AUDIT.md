@@ -20,7 +20,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 
 - Cloudflare Worker API with origin checks, bounded request bodies, validation, per-route rate limits, server-side Supabase access, and health endpoint.
 - Razorpay order creation for physical products and the ₹99 report from database-owned prices, HMAC verification, webhook idempotency, atomic payment fulfilment, partial/full refunds, and operator reconciliation.
-- Phone OTP authentication code, optional Cloudflare Turnstile support, resend cooldown, and complete removal of the browser OTP/developer bypass. SMS OTP is the selected production method; live delivery remains pending until a compatible SMS provider and Indian messaging setup are connected in Supabase.
+- Immediate browser-local customer accounts using name, email and mobile number, with no OTP, password or verification-link wait. Protected payments, paid reports and staff data remain outside this unverified public account layer.
 - Staff dashboard protected by an administrator UUID allowlist and Supabase Authenticator Assurance Level 2 (TOTP).
 - Consultation persistence linked to durable requested appointments, consent timestamp, account view, calendar reporting, and a prefilled customer-initiated WhatsApp handoff containing the appointment details. The MFA-protected calendar records direct payment confirmation; consultation changes and payment resolutions continue in the verified WhatsApp conversation.
 - Private Google Sheets snapshot sync for clients, consultations, calendar, orders, payments, refunds, catalogue prices, readings, consented anonymous visitor events, and report access.
@@ -40,7 +40,7 @@ The repository tree contains 287 tracked blobs: 77 HTML pages, 28 JavaScript fil
 5. Confirm any applicable tax/GST details and designate the individual grievance officer before production checkout is enabled.
 6. Share the private reporting spreadsheet with the backend Google service account and set its spreadsheet ID.
 7. Complete Razorpay and Supabase production-domain configuration for `siaos.in` and `www.siaos.in`.
-8. Run staging OTP, TOTP, checkout, webhook, refund, booking concurrency, sheet export, accessibility, and browser regression checks before enabling feature flags.
+8. Run staging account, TOTP, checkout, webhook, refund, booking concurrency, sheet export, accessibility, and browser regression checks before enabling feature flags.
 
 ## Known product gaps
 

@@ -39,6 +39,14 @@ test('public account code contains no OTP bypass or developer login',async()=>{
   const script=await readFile(new URL('../account-store.js',import.meta.url),'utf8');
   assert.doesNotMatch(script,/developerLogin|demoAccount|123456|siaosDemoAccount/i);
 });
+test('public account opens immediately without OTP authentication',async()=>{
+  const [html,login,store]=await Promise.all(['login.html','login.js','account-store.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
+  assert.match(html,/Email address/);
+  assert.match(html,/Mobile number/);
+  assert.match(login,/createAccount/);
+  assert.match(store,/localAccount/);
+  for(const content of [html,login,store])assert.doesNotMatch(content,/signInWithOtp|verifyOtp|Send OTP|Enter the 6-digit code/);
+});
 test('consultation booking saves first and hands the full request to WhatsApp',async()=>{
   const script=await readFile(new URL('../booking.js',import.meta.url),'utf8');
   assert.match(script,/SIAOSApi\('consultations'/);

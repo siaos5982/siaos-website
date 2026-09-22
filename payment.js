@@ -6,8 +6,11 @@
   const productSlug=new URLSearchParams(location.search).get('product');
   async function start(){
     const session=await window.SIAOSAccount.getSession();
-    if(!session?.access_token){
-      checkout.innerHTML='<h2>Verified sign-in required</h2><p>Please sign in before payment.</p><a class="btn fill" href="login.html?mode=signin&next='+encodeURIComponent('payment.html'+location.search)+'">Sign in</a>';return;
+    if(!session){
+      checkout.innerHTML='<h2>Account details required</h2><p>Enter your email and mobile number before payment. No OTP or password is required.</p><a class="btn fill" href="login.html?mode=signin&next='+encodeURIComponent('payment.html'+location.search)+'">Continue</a>';return;
+    }
+    if(!session.access_token){
+      checkout.innerHTML='<h2>Secure checkout is being connected</h2><p>Your account is ready. Product and ₹99 report payments will open here after the protected Razorpay backend is activated.</p><a class="btn fill" href="products.html">Back to Products</a>';return;
     }
     const report=productSlug==='compatibility-report'?json(sessionStorage,'siaosCompatibility'):null;
     const product=productSlug&&productSlug!=='compatibility-report'?json(localStorage,'siaosPendingProduct'):null;

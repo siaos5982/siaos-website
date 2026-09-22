@@ -2,20 +2,16 @@
 
 ## Current status
 
-The live Supabase migrations have been applied and verified. Phone-based SMS OTP is
-the selected customer sign-in method and the website already uses Supabase phone OTP
-APIs. Production SMS delivery still requires an SMS provider, Indian messaging
-compliance, provider credentials and staging checks. Worker deployment, Razorpay
-payment, Google Sheets transfer, and DNS activation also remain pending.
+The live Supabase migrations have been applied and verified. Public customer access
+is browser-local and requires only a name, email address and mobile number; there is
+no public OTP, password or verification-link step. Worker deployment, Razorpay
+payment, Google Sheets transfer, and DNS activation remain pending.
 
 ## Required owner decisions and access
 
 1. Connect the SIAOS Supabase project and confirm its existing schema/migrations.
-2. Connect a Supabase-compatible SMS provider for the selected phone OTP flow.
-   Configure OTP rate limits and CAPTCHA in Supabase itself, not only the browser.
-   Complete the provider's Indian DLT/sender/template requirements before live testing.
-3. Supply the approved administrator's Supabase user UUID via server configuration.
-   The person signs in with phone OTP and enrols an authenticator app at `/admin.html`.
+2. Supply the approved administrator's Supabase user UUID via server configuration.
+   Administrator access remains authenticated and requires an authenticator app at `/admin.html`.
 4. Use Razorpay TEST credentials first. Production requires an activated merchant
    account, approved prices for every product size and the ₹99 report, delivery
    availability, tax/shipping treatment and final product/report refund policies.
@@ -61,9 +57,9 @@ The reporting workbook ID is configured in `wrangler.toml`. Share that private w
 Set ALLOWED_ORIGINS to exact approved frontend origins. Production defaults include
 https://siaos.in and https://www.siaos.in. Add staging separately. No wildcard CORS.
 Never expose service-role, gateway secret, or Google private key in auth-config.js.
-Set auth-config.js backendUrl to the deployed Worker origin, and turnstileSiteKey
-to the public CAPTCHA site key configured in Supabase. The existing Supabase public
-key is not a server secret. No browser OTP bypass is present.
+Set auth-config.js backendUrl to the deployed Worker origin. The existing Supabase
+public key is not a server secret. Public browser-local accounts must not be accepted
+as proof of identity for payments, paid reports, orders or administrative access.
 
 PAYMENTS_ENABLED, ANALYTICS_ENABLED and SHEETS_SYNC_ENABLED default to false.
 Change each only after its respective staging and privacy checks. Turn off payments
@@ -130,8 +126,8 @@ and retention controls; this code cannot revoke downloaded copies.
 ## Mandatory staging tests before launch
 
 - Fresh install migration; upgrade against a copy of the actual production schema.
-- Two distinct customer accounts: no cross-account records; admin read rejected.
-- OTP success, wrong/expired code, resend rate limits, CAPTCHA and logout.
+- Two distinct browser-local accounts: no cross-device identity claim; admin read rejected.
+- Account creation, immediate sign-in, logout and browser-storage clearing behaviour.
 - Admin allowlist + real authenticator enrolment/challenge/recovery procedure.
 - Two users competing for one slot; sub-minute input; expired and Sunday slots.
 - Real Razorpay TEST checkout/capture; browser forgery, amount tampering, duplicate
@@ -144,11 +140,10 @@ and retention controls; this code cannot revoke downloaded copies.
 - Responsive and accessible browser QA for every page, including checkout/admin.
 - Publish real contact/privacy/terms/shipping/refund pages; remove
   unverified reviews; finish cart/report fulfilment; verify inventory and dispatch.
-- Custom domain, HTTPS, Supabase redirects, backups, alerts and restore testing.
+- Custom domain, HTTPS, backups, alerts and restore testing.
 
 ## Implementation references
 
-- Supabase phone OTP: https://supabase.com/docs/guides/auth/phone-login
 - Supabase authenticator MFA: https://supabase.com/docs/guides/auth/auth-mfa/totp
 - Cloudflare secrets: https://developers.cloudflare.com/workers/configuration/secrets/
 
