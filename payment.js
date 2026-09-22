@@ -1,104 +1,51 @@
 (() => {
-  const summaryTarget = document.querySelector('#paymentSummary');
-  const checkoutTarget = document.querySelector('#paymentCheckout');
-  const backTop = document.querySelector('#paymentBackTop');
-  const kicker = document.querySelector('#paymentKicker');
-  const title = document.querySelector('#paymentTitle');
-  const intro = document.querySelector('#paymentIntro');
-  const params = new URLSearchParams(window.location.search);
-  const escapeHtml = value => String(value).replace(/[&<>'"]/g, character => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-  }[character]));
-
-  const safeSessionJson = key => {
-    try {
-      return JSON.parse(sessionStorage.getItem(key));
-    } catch {
-      return null;
+  const $=id=>document.getElementById(id);
+  const summary=$('paymentSummary'),checkout=$('paymentCheckout');
+  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const json=(storage,key)=>{try{return JSON.parse(storage.getItem(key));}catch{return null;}};
+  const productSlug=new URLSearchParams(location.search).get('product');
+  async function start(){
+    const session=await window.SIAOSAccount.getSession();
+    if(!session?.access_token){
+      checkout.innerHTML='<h2>Verified sign-in required</h2><p>Please sign in before payment.</p><a class="btn fill" href="login.html?mode=signin&next='+encodeURIComponent('payment.html'+location.search)+'">Sign in</a>';return;
     }
-  };
-
-  const renderCompatibilityReport = () => {
-    const report = safeSessionJson('siaosCompatibility');
-
-    document.title = '₹99 Compatibility Report | SIAOS';
-    kicker.textContent = 'Private Report';
-    title.textContent = 'Unlock your compatibility report';
-    intro.textContent = 'Continue securely to request the complete numerology guidance prepared from both dates of birth.';
-    backTop.href = 'index.html#compatibility';
-    backTop.textContent = 'Back to Compatibility';
-
-    summaryTarget.innerHTML = report ? `
-      <span class="kicker">Your saved preview</span>
-      <div class="payment-order-grid">
-        <div><strong>${escapeHtml(report.score)}%</strong><span>Compatibility score</span></div>
-        <div><strong>${escapeHtml(report.yourMulank)} · ${escapeHtml(report.yourBhagyank)}</strong><span>Your Mulank · Bhagyank</span></div>
-        <div><strong>${escapeHtml(report.partnerMulank)} · ${escapeHtml(report.partnerBhagyank)}</strong><span>Partner Mulank · Bhagyank</span></div>
-      </div>` : `
-      <h2>Your ₹99 compatibility report</h2>
-      <p>Your preview was not found in this browser. Calculate both numbers first so the report request includes your result.</p>
-      <a class="btn fill" href="index.html#compatibility">Calculate Compatibility</a>`;
-
-    checkoutTarget.innerHTML = `
-      <span class="kicker">Report access</span>
-      <div class="payment-price"><span>Complete report</span><strong>₹99</strong></div>
-      <p>The secure online payment gateway is being connected. Once enabled, this report will be attached to your signed-in account and remain available there for 15 days after payment confirmation.</p>
-      <div class="payment-action-row">
-        <button class="btn fill" type="button" disabled>Secure Checkout Coming Next</button>
-        <a class="btn" href="index.html#compatibility">Return to Preview</a>
-      </div>
-      <small class="payment-security-note">No card or banking details are collected on this website.</small>`;
-  };
-
-  const renderConsultation = () => {
-    const booking = safeSessionJson('siaosBooking');
-    summaryTarget.innerHTML = booking ? `
-      <span class="kicker">Selected consultation</span>
-      <h2>${escapeHtml(booking.serviceName)}</h2>
-      <p>Your completed details are ready. Payment choices will be connected in the next update.</p>` : `
-      <h2>No consultation selected</h2>
-      <p>Please choose a service and complete its form first.</p>
-      <a class="btn fill" href="booking.html">Choose a Service</a>`;
-
-    checkoutTarget.innerHTML = `
-      <span class="kicker">Payment setup</span>
-      <h2>Payment options will be added next</h2>
-      <p>No payment will be taken on this page yet. Your selected service and completed form are ready for the payment card integration.</p>
-      <a class="btn" href="booking.html">Back to Booking</a>`;
-  };
-
-  const renderProductOrder=()=>{
-    let order;
-    try{order=JSON.parse(localStorage.getItem('siaosPendingProduct'));}catch{order=null;}
-    document.title='Product Checkout | SIAOS';kicker.textContent='SIAOS Store';title.textContent='Complete your product order';intro.textContent='Your order will be securely attached to your signed-in SIAOS account after payment confirmation.';backTop.href='products.html';backTop.textContent='Back to Store';
-    if(!order){summaryTarget.innerHTML=`<h2>No product selected</h2><p>Please return to the store and select a product first.</p><a class="btn fill" href="products.html">Explore Products</a>`;checkoutTarget.innerHTML='';return;}
-    summaryTarget.innerHTML=`<span class="kicker">Your order</span><h2>${escapeHtml(order.name)}</h2><div class="payment-order-grid"><div><strong>${escapeHtml(order.size||'Standard')}</strong><span>Selected size</span></div><div><strong>${escapeHtml(order.quantity||1)}</strong><span>Quantity</span></div><div><strong>${escapeHtml(order.price||'Price shown in store')}</strong><span>Item total</span></div></div>`;
-    checkoutTarget.innerHTML=`<span class="kicker">Account-linked purchase</span><h2>Secure product checkout</h2><p>When the payment gateway is activated, successful payment will create an order in My Account with the product, size, quantity, paid amount, delivery status and tracking reference.</p><div class="payment-action-row"><button class="btn fill" type="button" disabled>Secure Checkout Coming Next</button><a class="btn" href="product-detail.html?product=${encodeURIComponent(order.slug)}">Return to Product</a></div><small class="payment-security-note">An unpaid checkout attempt will not be recorded as a completed purchase.</small>`;
-  };
-
-  const requireAccount = async () => {
-    const session = await window.SIAOSAccount?.getSession();
-    if (session) return true;
-    document.title = 'Sign In Before Payment | SIAOS';
-    kicker.textContent = 'Private checkout';
-    title.textContent = 'Sign in before payment';
-    const isProduct=params.has('product')&&params.get('product')!=='compatibility-report';
-    intro.textContent=isProduct?'Sign in so this product purchase, payment status and delivery updates remain connected to your account.':'Your purchase must be connected to your account so only you can reopen the report during its 15-day access period.';
-    summaryTarget.innerHTML=`<h2>Keep this purchase with your account</h2><p>${isProduct?'Your selected product will remain saved in this browser while you sign in.':'Your current reading will remain saved in this browser.'}</p>`;
-    const next = `${location.pathname.split('/').pop()}${location.search}`;
-    checkoutTarget.innerHTML = `<span class="kicker">Account required</span><h2>Continue securely</h2><p>After signing in, you will return directly to this payment page.</p><div class="payment-action-row"><a class="btn fill" href="login.html?mode=signin&next=${encodeURIComponent(next)}">Sign In</a><a class="btn" href="login.html?mode=signup&next=${encodeURIComponent(next)}">Create Account</a></div>`;
-    return false;
-  };
-
-  (async () => {
-    try {
-      if (!await requireAccount()) return;
-      await window.SIAOSAccount.captureExistingReadings();
-      if(params.get('product')==='compatibility-report') renderCompatibilityReport();
-      else if(params.has('product')) renderProductOrder();
-      else renderConsultation();
-    } catch (error) {
-      checkoutTarget.innerHTML = `<h2>Checkout could not be opened</h2><p>${escapeHtml(error.message || 'Please try again.')}</p>`;
+    const report=productSlug==='compatibility-report'?json(sessionStorage,'siaosCompatibility'):null;
+    const product=productSlug&&productSlug!=='compatibility-report'?json(localStorage,'siaosPendingProduct'):null;
+    if(!productSlug||(productSlug==='compatibility-report'?(!report||![report.yourMulank,report.yourBhagyank,report.partnerMulank,report.partnerBhagyank].every(n=>Number.isInteger(n)&&n>=1&&n<=9)):(!product||product.slug!==productSlug))){
+      checkout.innerHTML='<h2>No saved checkout found</h2><p>Online payment is available only for products and the ₹99 compatibility report.</p><a class="btn" href="'+(productSlug==='compatibility-report'?'compatibility-report.html':'products.html')+'">Start again</a>';return;
     }
-  })();
+    const selection=report?{kind:'report',slug:'compatibility-report',variant:'15-day-access',quantity:1,reportNumbers:{yourMulank:report.yourMulank,yourBhagyank:report.yourBhagyank,partnerMulank:report.partnerMulank,partnerBhagyank:report.partnerBhagyank}}:{kind:'product',slug:product.slug,variant:product.size||'Standard',quantity:Number(product.quantity||1)};
+    summary.innerHTML='<h2>'+escape(report?'Complete Compatibility Report':product.name)+'</h2><p>'+escape(report?'Protected access for 15 days':selection.variant+' · Quantity '+selection.quantity)+'</p><p>The final price is calculated by the secure server. Please check the amount displayed in Razorpay before authorising payment.</p>';
+    const address=product?'<fieldset><legend>Delivery address · India</legend>'+[['name','Recipient name','name'],['phone','Phone number','tel'],['line1','Address line 1','address-line1'],['line2','Address line 2 (optional)','address-line2'],['city','City','address-level2'],['state','State','address-level1'],['postalCode','PIN code','postal-code']].map(([name,label,auto])=>'<label>'+label+'<input name="'+name+'" autocomplete="'+auto+'" maxlength="200" '+(name==='line2'?'':'required')+'></label>').join('')+'</fieldset>':'';
+    checkout.innerHTML='<form id="checkoutForm" class="form">'+address+'<label><input name="purchaseConsent" type="checkbox" required> I agree to the published purchase policies and the processing of my order details in the restricted SIAOS dashboard and operational Google Sheets.</label><button class="btn fill" type="submit">Continue to secure payment</button></form><p id="checkoutStatus" role="status" aria-live="polite"></p><p>No card number or OTP is stored by SIAOS. Keep this page open until verification finishes.</p><a class="btn" href="account.html">My Account</a>';
+    const form=$('checkoutForm'),button=form.querySelector('button'),status=$('checkoutStatus');
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();if(!form.reportValidity())return;button.disabled=true;status.textContent='Preparing secure payment…';
+      try {
+        const input={...selection,consentAccepted:true};
+        if(product){input.address=Object.fromEntries(new FormData(form));delete input.address.purchaseConsent;input.address.country='India';}
+        const identity=session.user.id+'|'+JSON.stringify(input);
+        let draft=json(sessionStorage,'siaosCheckoutIntent');
+        if(!draft||draft.identity!==identity)draft={identity,requestId:crypto.randomUUID()};
+        sessionStorage.setItem('siaosCheckoutIntent',JSON.stringify(draft));
+        const order=await window.SIAOSApi('payments/create',{method:'POST',body:{...input,requestId:draft.requestId}});
+        if(['paid','refunded'].includes(order.status)){status.textContent='This checkout is already '+order.status+'. See My Account.';return;}
+        if(!window.Razorpay)throw new Error('Payment checkout failed to load. Check your connection.');
+        const modal=new Razorpay({key:order.key,order_id:order.orderId,amount:order.amount,currency:order.currency,name:'SIAOS',description:order.name,
+          prefill:{contact:session.user.phone||''},
+          modal:{ondismiss:()=>{button.disabled=false;status.textContent='Checkout closed. If you paid, check My Account before trying again.';}},
+          handler:async result=>{
+            button.disabled=true;status.textContent='Verifying your payment…';
+            try{
+              const verified=await window.SIAOSApi('payments/verify',{method:'POST',body:{orderId:order.orderId,paymentId:result.razorpay_payment_id,signature:result.razorpay_signature}});
+              status.textContent=verified.status==='paid'?('Payment verified. Your purchase is saved in My Account'+(verified.reportId?' and the report is ready.':'.')):'Payment is processing. Check My Account shortly; do not pay again.';
+            }catch(error){status.textContent=error.message+' If money was deducted, do not pay again. Contact SIAOS with your Razorpay reference.';}
+          }
+        });
+        modal.on('payment.failed',()=>{status.textContent='Payment attempt failed. If money was deducted, check its status before retrying.';button.disabled=false;});
+        modal.open();
+      }catch(error){status.textContent=error.message||'Checkout could not be opened.';button.disabled=false;}
+    });
+  }
+  start().catch(error=>{checkout.textContent=error.message||'Checkout could not be opened.';});
 })();

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="theme.css?v=20260907-4">
+  <link rel="stylesheet" href="theme.css?v=20260918-3">
 </head>
 <body class="auth-page">
   <nav class="nav"><a class="brand" href="index.html"><img src="assets/siaos-logo.webp" alt="SIAOS crest"><span>Sarkar Institute of Astrology and Occult Sciences</span></a><a class="top-btn" href="index.html">Back to Website</a></nav>
@@ -46,22 +46,22 @@
           </div>
           <label id="marketingConsent" class="auth-check"><input id="authMarketing" type="checkbox"> <span>Email me occasional SIAOS announcements, new articles and event updates. <b>Optional</b></span></label>
           <label id="termsConsent" class="auth-check required"><input id="authTerms" type="checkbox" required> <span>I agree to the account terms and understand that purchased digital reports remain accessible for 15 days.</span></label>
+          <div id="otpCaptcha"></div>
           <button class="btn fill auth-submit" type="submit">Send OTP</button>
         </form>
-        <div id="developerAccess" class="developer-access" hidden><span>Website testing</span><button id="developerLogin" class="btn" type="button">Enter Developer Preview</button><small>No OTP required. This private preview can be disabled when the live website launches.</small></div>
       </div>
       <div id="otpStep" class="auth-otp-step" hidden>
         <span class="kicker">Phone verification</span><h2>Enter the 6-digit code</h2>
         <p>We sent an OTP to <strong id="otpPhone"></strong>.</p>
         <form id="otpForm" class="auth-form"><label>One-time password<input id="authOtp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required></label><button class="btn fill auth-submit" type="submit">Verify & Continue</button></form>
         <button id="changePhone" class="auth-text-button" type="button">Change phone number</button>
-        <p id="demoOtpHint" class="demo-otp-hint" hidden>Local preview code: <strong>123456</strong></p>
+        <button id="resendOtp" class="auth-text-button" type="button" disabled>Resend OTP</button>
       </div>
       <p id="authStatus" class="auth-status" role="status" aria-live="polite"></p>
       <small class="auth-security">Your OTP is used only to verify account access. Never share it with anyone, including SIAOS staff.</small>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="auth-config.js?v=20260906-2"></script><script src="account-store.js?v=20260906-2"></script><script src="login.js?v=20260906-2"></script>
+  <script src="auth-config.js?v=20260918-3"></script><script src="account-store.js?v=20260918-3"></script><script src="login.js?v=20260918-3"></script><script src="whatsapp_connector.js?v=20260920-1"></script>
 </body>
 </html>

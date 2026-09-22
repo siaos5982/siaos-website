@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Complete your selected SIAOS service or report payment request.">
+  <meta name="description" content="Complete your SIAOS product or ₹99 compatibility report payment securely.">
   <title>Payment | SIAOS</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@500;600&family=EB+Garamond:wght@400;500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="theme.css">
@@ -11,13 +11,13 @@
 <body>
   <nav class="nav">
     <a class="brand" href="index.html"><img src="assets/siaos-logo.webp" alt="SIAOS crest"><span>Sarkar Institute of Astrology and Occult Sciences</span></a>
-    <a class="top-btn" id="paymentBackTop" href="booking.html">Change Service</a>
+    <a class="top-btn" id="paymentBackTop" href="products.html">Back to Products</a>
   </nav>
 
   <header class="page-hero">
     <span class="kicker" id="paymentKicker">Final Step</span>
     <h1 id="paymentTitle">Payment</h1>
-    <p id="paymentIntro">Your consultation details are saved in this browser for the next step.</p>
+    <p id="paymentIntro">Secure payment is available for products and the ₹99 compatibility report.</p>
   </header>
 
   <main class="page-main payment-main">
@@ -29,8 +29,11 @@
 
   <footer><a href="index.html">← Back to SIAOS home</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="auth-config.js?v=20260831-1"></script>
-  <script src="account-store.js?v=20260831-1"></script>
-  <script src="payment.js?v=20260831-1"></script>
+  <script src="auth-config.js?v=20260918-3"></script>
+  <script src="account-store.js?v=20260918-3"></script>
+  <script src="api-client.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="payment.js?v=20260918-3"></script>
+  <script src="whatsapp_connector.js?v=20260920-1"></script>
 </body>
 </html>

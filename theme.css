@@ -153,6 +153,7 @@ section{padding:90px 7vw}.head{max-width:690px;margin-bottom:42px}.head h2{font:
 
 /* A closed account gate must not remain as an invisible full-page click layer. */
 .account-prompt[hidden],.booking-access-gate[hidden]{display:none!important;pointer-events:none!important}
+.booking-submit:disabled{opacity:.38;cursor:not-allowed}
 
 /* Keep the product breadcrumb fully below the fixed navigation. */
 .product-detail-page{padding-top:132px}
