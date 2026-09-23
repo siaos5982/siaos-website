@@ -16,6 +16,7 @@ GOOGLE_SHEET_ID = "1TqpXUqp17jlVoy2B4d9kbMLot1URN8xFElhwRWEsq2o"
 # crons = ["0 * * * *"]
 
 # Set via wrangler secret put; never commit real values:
-# SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_USER_IDS (comma-separated UUIDs)
+# SUPABASE_URL, SUPABASE_SECRET_KEY (preferred; legacy SUPABASE_SERVICE_ROLE_KEY supported)
+# ADMIN_USER_IDS (comma-separated UUIDs)
 # RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
 # GOOGLE_SERVICE_ACCOUNT_JSON

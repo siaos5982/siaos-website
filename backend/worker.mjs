@@ -1,11 +1,18 @@
 import {HttpError,requireValue,uuid,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
 import {syncSheets,REPORTS} from './sheets.mjs';
 
+const supabaseServerKey=env=>env.SUPABASE_SECRET_KEY||env.SUPABASE_SERVICE_ROLE_KEY;
+function backendConfig(env){
+  const key=supabaseServerKey(env);
+  requireValue(env.SUPABASE_URL&&key,'Backend configuration is incomplete.',503);
+  return key;
+}
 export function database(env) {
-  requireValue(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY,'Backend configuration is incomplete.',503);
+  const key=backendConfig(env);
+  const authorization=key.startsWith('sb_secret_')?{}:{Authorization:`Bearer ${key}`};
   return async (path, options={}) => {
     const response=await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`,{
-      ...options,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,'Content-Type':'application/json',Prefer:'return=representation',...options.headers},
+      ...options,headers:{apikey:key,...authorization,'Content-Type':'application/json',Prefer:'return=representation',...options.headers},
       body:options.body===undefined?undefined:JSON.stringify(options.body),signal:AbortSignal.timeout(15000)
     });
     const data=await response.json().catch(()=>null);
@@ -26,7 +33,7 @@ async function jsonBody(request){try{return JSON.parse(await readBody(request));
 async function authenticate(request,env,admin=false){
   const token=request.headers.get('Authorization')?.match(/^Bearer (.+)$/)?.[1];
   requireValue(token,'Sign in to continue.',401);
-  const response=await fetch(`${env.SUPABASE_URL}/auth/v1/user`,{headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(10000)});
+  const response=await fetch(`${env.SUPABASE_URL}/auth/v1/user`,{headers:{apikey:backendConfig(env),Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(10000)});
   requireValue(response.ok,'Your session expired. Sign in again.',401);
   const user=await response.json();requireValue(uuid(user.id),'Invalid session.',401);
   if(admin){
@@ -143,6 +150,7 @@ export default {
       const url=new URL(request.url);const path=url.pathname;
       if(path!=='/api/webhooks/razorpay')requireValue(!origin||allowed.includes(origin),'Origin not allowed.',403);
       if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
+      if(request.method==='GET'&&path==='/')return new Response(JSON.stringify({service:'SIAOS API',status:'ok',health:'/api/health'}),{headers});
       if(request.method==='GET'&&path==='/api/health')return new Response(JSON.stringify({status:'ok',payments:env.PAYMENTS_ENABLED==='true',analytics:env.ANALYTICS_ENABLED==='true'}),{headers});
       const db=database(env);let result;
       if(request.method==='POST'&&path==='/api/webhooks/razorpay')result=await webhook(request,env,db);
@@ -150,7 +158,7 @@ export default {
         requireValue(env.ANALYTICS_ENABLED==='true','Analytics disabled.',503);
         requireValue(origin&&allowed.includes(origin),'Analytics requires an allowed origin.',403);
         const event=analyticsInput(await jsonBody(request));
-        const ipKey=await hmac(env.SUPABASE_SERVICE_ROLE_KEY,request.headers.get('CF-Connecting-IP')||'unknown');
+        const ipKey=await hmac(supabaseServerKey(env),request.headers.get('CF-Connecting-IP')||'unknown');
         await limited(db,`analytics:${ipKey}`,120);
         await db('analytics_events',{method:'POST',body:event});result={accepted:true};
       }else{

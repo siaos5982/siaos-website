@@ -47,7 +47,7 @@ Deploy `backend/worker.mjs` using `backend/wrangler.toml` to a staging Worker fi
 Store these server secrets using Cloudflare's secret configuration:
 
 - SUPABASE_URL
-- SUPABASE_SERVICE_ROLE_KEY
+- SUPABASE_SECRET_KEY (preferred; the legacy SUPABASE_SERVICE_ROLE_KEY remains supported during migration)
 - ADMIN_USER_IDS (comma-separated administrator UUIDs)
 - RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
 - GOOGLE_SERVICE_ACCOUNT_JSON

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
 import {sheetRows,SHEET_TITLES,overviewRows} from '../backend/sheets.mjs';
-import worker from '../backend/worker.mjs';
+import worker,{database} from '../backend/worker.mjs';
 
 const id='22222222-2222-4222-8222-222222222222';
 const booking={appointmentId:id,service:'tarot',relatedService:'Single Question Reading',details:{fullName:'Test User',dateOfBirth:'1990-01-01',phone:'9999999999',whatsapp:'9999999999',consultationMode:'On-call consultation',disclaimerAccepted:'on'}};
@@ -33,6 +33,12 @@ test('calendar export includes consultation name and IST time',()=>{const rows=s
 test('Sheets sync targets the prepared workbook tabs and builds dashboard counts',()=>{assert.equal(SHEET_TITLES.clients,'Clients');assert.equal(SHEET_TITLES.refunds,'Refunds');assert.equal(SHEET_TITLES.catalog,'Catalog');const rows=overviewRows({clients:2,payments:3},'2026-09-20T00:00:00.000Z');assert.deepEqual(rows[4],['Clients',2,'Submitted profile and contact records']);assert.deepEqual(rows.at(-1),['Last refresh','2026-09-20T00:00:00.000Z','Automatic backend snapshot']);});
 test('API rejects disallowed browser origin',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health',{headers:{Origin:'https://evil.test'}}),{ALLOWED_ORIGINS:'https://siaos.in'});assert.equal(r.status,403);assert.equal(r.headers.get('access-control-allow-origin'),null);});
 test('health does not expose credentials',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health'),{SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,200);assert.ok(!(await r.text()).includes('secret'));});
+test('API root returns a clean service status without requiring secrets',async()=>{const r=await worker.fetch(new Request('https://api.test/'),{});assert.equal(r.status,200);assert.deepEqual(await r.json(),{service:'SIAOS API',status:'ok',health:'/api/health'});});
+test('Supabase secret keys stay out of the Authorization header for server REST calls',async()=>{
+  const original=globalThis.fetch;let headers;
+  globalThis.fetch=async(_url,options={})=>{headers=options.headers;return new Response('[]',{status:200});};
+  try{await database({SUPABASE_URL:'https://db.test',SUPABASE_SECRET_KEY:'sb_secret_test'} )('profiles');assert.equal(headers.apikey,'sb_secret_test');assert.equal(headers.Authorization,undefined);}finally{globalThis.fetch=original;}
+});
 test('missing authorization cannot read admin data',async()=>{const r=await worker.fetch(new Request('https://api.test/api/admin/records?type=clients'),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,401);});
 test('invalid webhook signature is rejected before database access',async()=>{const r=await worker.fetch(new Request('https://api.test/api/webhooks/razorpay',{method:'POST',body:'{}',headers:{'x-razorpay-signature':'0'.repeat(64)}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',RAZORPAY_WEBHOOK_SECRET:'test'});assert.equal(r.status,401);});
 test('public account code contains no OTP bypass or developer login',async()=>{
