@@ -65,9 +65,8 @@ test('every website page loads the WhatsApp chat floater',async()=>{
   assert.match(connector,/https:\/\/wa\.me/);
   assert.match(connector,/bottom:/);
   assert.match(connector,/right:/);
+  assert.match(connector,/Namaste SIAOS/);
   assert.match(connector,/Chat.*WhatsApp/);
-  assert.match(connector,/new URL\(window\.location\.href\)/);
-  assert.match(connector,/pageUrl\.search = ""/);
-  assert.match(connector,/pageUrl\.hash = ""/);
-  assert.match(connector,/pageUrl\.href/);
+  assert.doesNotMatch(connector,/window\.location\.href/);
+  assert.doesNotMatch(connector,/pageUrl|pageTitle/);
 });
