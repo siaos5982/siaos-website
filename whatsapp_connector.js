@@ -1,14 +1,10 @@
 (function () {
   if (document.querySelector('.whatsapp-float')) return;
   var phone = "919173569555";
-  var pageUrl = new URL(window.location.href);
-  pageUrl.search = "";
-  pageUrl.hash = "";
-  var pageTitle = document.title.trim() || "SIAOS website";
   var message = [
-    "Hello SIAOS, I need assistance with this page:",
-    pageTitle,
-    pageUrl.href
+    "Namaste SIAOS ✨",
+    "I’m ready to explore the right path with SIAOS.",
+    "Could your team guide me on the best next step?"
   ].join("\n");
 
   var link = document.createElement("a");
