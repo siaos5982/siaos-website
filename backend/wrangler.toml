@@ -4,7 +4,7 @@ compatibility_date = "2026-09-01"
 
 # Deploy to a preview Worker first. No live domain is changed by this file.
 [vars]
-ALLOWED_ORIGINS = "https://siaos.in,https://www.siaos.in"
+ALLOWED_ORIGINS = "https://siaos5982.github.io,https://siaos.in,https://www.siaos.in"
 PAYMENTS_ENABLED = "false"
 ANALYTICS_ENABLED = "false"
 SHEETS_SYNC_ENABLED = "false"
