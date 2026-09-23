@@ -12,7 +12,7 @@
   link.target = "_blank";
   link.rel = "noopener noreferrer";
   link.className = "whatsapp-float";
-  link.setAttribute("aria-label", "Chat with SIAOS on WhatsApp about this page");
+  link.setAttribute("aria-label", "Chat with SIAOS on WhatsApp");
   link.setAttribute("title", "Chat with SIAOS on WhatsApp");
   link.innerHTML =
     '<svg viewBox="0 0 32 32" width="30" height="30" fill="#fff">' +
