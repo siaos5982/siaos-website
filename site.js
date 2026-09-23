@@ -163,7 +163,7 @@ setInterval(refreshZodiacMonth,60 * 60 * 1000);
     if ([...document.scripts].some(script => script.src && new URL(script.src,location.href).pathname === requestedPath)) { resolve(); return; }
     const script = document.createElement('script'); script.src = src; script.onload = resolve; script.onerror = reject; document.head.append(script);
   });
-  loadScript(new URL('whatsapp_connector.js?v=20260920-2',base).href).catch(() => {});
+  loadScript(new URL('whatsapp_connector.js?v=20260923-1',base).href).catch(() => {});
   (async () => {
     await loadScript(new URL('auth-config.js?v=20260831-1',base).href);
     const config = window.SIAOS_AUTH_CONFIG || {};
