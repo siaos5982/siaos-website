@@ -42,5 +42,12 @@
     }
   }
   document.querySelector('#accountSignOut').addEventListener('click',async () => {await account.signOut();location.replace('index.html');});
+  document.querySelector('#deleteAccount').addEventListener('click',async event => {
+    const button=event.currentTarget,status=document.querySelector('#deleteAccountStatus');
+    if(!confirm('Permanently delete this SIAOS account and its unpaid consultation history? This cannot be undone.'))return;
+    button.disabled=true;status.textContent='Deleting your account securely…';
+    try{await account.deleteAccount();status.textContent='Account deleted.';location.replace('index.html');}
+    catch(error){status.textContent=error.message||'Your account could not be deleted. Please try again.';button.disabled=false;}
+  });
   loadAccount();
 })();

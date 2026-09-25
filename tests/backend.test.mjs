@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
+import {publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
 import {sheetRows,SHEET_TITLES,overviewRows} from '../backend/sheets.mjs';
 import worker,{database} from '../backend/worker.mjs';
 
@@ -14,6 +14,9 @@ test('consultations reject arbitrary fields such as tokens',()=>assert.throws(()
 test('consultations reject missing required details',()=>assert.throws(()=>consultationInput({...booking,details:{disclaimerAccepted:'on'}})));
 test('invalid appointment IDs cannot reach the DB',()=>assert.throws(()=>consultationInput({...booking,appointmentId:'fake'})));
 test('consultations reject impossible calendar dates',()=>assert.throws(()=>consultationInput({...booking,details:{...booking.details,dateOfBirth:'1990-02-31'}})));
+test('passwordless account input normalises email and international phone',()=>{const value=publicAccountInput({mode:'signup',fullName:' Test User ',email:'TEST@EXAMPLE.COM',countryCode:'+91',phone:'99999 99999'});assert.equal(value.email,'test@example.com');assert.equal(value.phone,'+919999999999');});
+test('account deletion requires its browser token and explicit confirmation',()=>{const token='a'.repeat(64);assert.deepEqual(publicAccountDeleteInput({accountId:id,deletionToken:token,confirmed:true}),{accountId:id,deletionToken:token});assert.throws(()=>publicAccountDeleteInput({accountId:id,deletionToken:token,confirmed:false}));});
+test('public consultations require a browser account token and future time',()=>{const future=new Date(Date.now()+86400000).toISOString();const value=publicConsultationInput({...booking,requestId:id,accountId:id,deletionToken:'a'.repeat(64),details:{...booking.details,appointmentStart:future}});assert.equal(value.startAt,future);assert.throws(()=>publicConsultationInput({...booking,requestId:id,accountId:id,deletionToken:'bad'}));});
 test('checkout strips browser amounts and other unexpected values',()=>{const value=checkoutInput({...order,amount:1,paid:true});assert.equal(value.amount,undefined);assert.equal(value.paid,undefined);});
 test('checkout requires consent',()=>assert.throws(()=>checkoutInput({...order,consentAccepted:false})));
 test('checkout rejects fractional and excessive quantities',()=>{for(const quantity of [0,-1,1.5,11,'1'])assert.throws(()=>checkoutInput({...order,quantity}));});
@@ -29,7 +32,7 @@ test('HMAC SHA256 matches a known test vector',async()=>{const s=await hmac('key
 test('analytics strips query strings and full referrer details',()=>{const e=analyticsInput({consent:true,event_name:'page_view',session_id:id,anonymous_id:id,path:'/index.html',referrer:'https://example.org/path?email=private@example.org',metadata:{email:'private'},device:'mobile'});assert.equal(e.referrer,'example.org');assert.equal(e.metadata.email,undefined);});
 test('analytics rejects URL queries and absent consent',()=>{assert.throws(()=>analyticsInput({consent:false}));assert.throws(()=>analyticsInput({consent:true,event_name:'page_view',session_id:id,anonymous_id:id,path:'/login.html?otp=123456'}));});
 test('sheet consultation export uses approved fields only',()=>{const rows=sheetRows('consultations',[{id,details:{fullName:'=IMPORTXML("evil")',access_token:'secret'}}]);assert.ok(rows[0].includes('fullName'));assert.ok(!JSON.stringify(rows).includes('secret'));assert.ok(JSON.stringify(rows).includes('IMPORTXML'));});
-test('calendar export includes consultation name and IST time',()=>{const rows=sheetRows('calendar',[{start_at:'2026-09-18T04:30:00Z',end_at:'2026-09-18T05:00:00Z',consultation_requests:[{id,details:{fullName:'Test',phone:'123'}}]}]);assert.ok(rows[0].includes('clientName'));assert.ok(rows[1].includes('Test'));assert.ok(rows[1].some(v=>v.includes('10:00:00')));});
+test('calendar export includes consultation name and IST time',()=>{const rows=sheetRows('calendar',[{id,appointment_start:'2026-09-18T04:30:00Z',details:{fullName:'Test',phone:'123'}}]);assert.ok(rows[0].includes('clientName'));assert.ok(rows[1].includes('Test'));assert.ok(rows[1].some(v=>v.includes('10:00:00')));});
 test('Sheets sync targets the prepared workbook tabs and builds dashboard counts',()=>{assert.equal(SHEET_TITLES.clients,'Clients');assert.equal(SHEET_TITLES.refunds,'Refunds');assert.equal(SHEET_TITLES.catalog,'Catalog');const rows=overviewRows({clients:2,payments:3},'2026-09-20T00:00:00.000Z');assert.deepEqual(rows[4],['Clients',2,'Submitted profile and contact records']);assert.deepEqual(rows.at(-1),['Last refresh','2026-09-20T00:00:00.000Z','Automatic backend snapshot']);});
 test('API rejects disallowed browser origin',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health',{headers:{Origin:'https://evil.test'}}),{ALLOWED_ORIGINS:'https://siaos.in'});assert.equal(r.status,403);assert.equal(r.headers.get('access-control-allow-origin'),null);});
 test('health does not expose credentials',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health'),{SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,200);assert.ok(!(await r.text()).includes('secret'));});
@@ -51,11 +54,13 @@ test('public account opens immediately without OTP authentication',async()=>{
   assert.match(html,/Mobile number/);
   assert.match(login,/createAccount/);
   assert.match(store,/localAccount/);
+  assert.match(store,/accounts\/open/);
+  assert.match(store,/deleteAccount/);
   for(const content of [html,login,store])assert.doesNotMatch(content,/signInWithOtp|verifyOtp|Send OTP|Enter the 6-digit code/);
 });
 test('consultation booking saves first and hands the full request to WhatsApp',async()=>{
   const script=await readFile(new URL('../booking.js',import.meta.url),'utf8');
-  assert.match(script,/SIAOSApi\('consultations'/);
+  assert.match(script,/publicRequest\('public\/consultations'/);
   assert.match(script,/https:\/\/wa\.me\/919173569555\?text=/);
   assert.match(script,/Booking reference:/);
   assert.match(script,/Name:/);

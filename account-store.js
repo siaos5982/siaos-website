@@ -13,7 +13,11 @@
   const makeId = prefix => `${prefix}-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
   const notify = session => listeners.forEach(listener => listener(session));
 
-  const getLocalProfile = () => readJson(localStorage,keys.localAccount,null);
+  const getLocalProfile = () => {
+    const profile=readJson(localStorage,keys.localAccount,null);
+    if(!profile?.accountId||!profile?.deletionToken)return null;
+    return profile;
+  };
   const localSession = profile => profile ? {
     access_token:null,
     local_only:true,
@@ -22,11 +26,23 @@
 
   async function getSession() {
     const local = getLocalProfile();
-    if (local) return localSession(local);
+    return local ? localSession(local) : null;
+  }
+
+  async function getAdminSession() {
     if (!client) return null;
     const {data,error} = await client.auth.getSession();
     if (error) throw error;
     return data.session || null;
+  }
+
+  async function publicRequest(path,options={}) {
+    const base=String(config.backendUrl||'').replace(/\/$/,'');
+    if(!base)throw new Error('Account service is temporarily unavailable. Please try again shortly.');
+    const response=await fetch(base+'/api/'+path,{...options,headers:{'Content-Type':'application/json',...options.headers},body:options.body===undefined?undefined:JSON.stringify(options.body)});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'The request could not be completed.');
+    return data;
   }
 
   async function createAccount({countryCode,phone,email,fullName,mode='signup',marketingOptIn=false}) {
@@ -37,13 +53,13 @@
     const current = getLocalProfile();
     const cleanName = String(fullName || current?.fullName || '').trim();
     if (mode === 'signup' && cleanName.length < 2) throw new Error('Enter your full name.');
+    const data=await publicRequest('accounts/open',{method:'POST',body:{mode,fullName:cleanName,email:cleanEmail,countryCode,phone,marketingOptIn,accountId:current?.accountId||'',deletionToken:current?.deletionToken||''}});
     const profile = {
-      userId:current?.userId || makeId('member'),
-      fullName:cleanName || 'SIAOS Member',email:cleanEmail,phone:fullPhone,
-      countryCode:String(countryCode || '').replace(/\D/g,''),marketingOptIn:Boolean(marketingOptIn),
-      createdAt:current?.createdAt || new Date().toISOString(),updatedAt:new Date().toISOString()
+      accountId:data.account.id,userId:data.account.id,deletionToken:data.deletionToken,
+      fullName:data.account.fullName||'SIAOS Member',email:data.account.email,phone:data.account.phone,
+      countryCode:data.account.countryCode,marketingOptIn:Boolean(data.account.marketingOptIn),
+      createdAt:data.account.createdAt,updatedAt:data.account.updatedAt
     };
-    if (client) await client.auth.signOut().catch(()=>{});
     writeJson(localStorage,keys.localAccount,profile);
     const session = localSession(profile);
     notify(session);
@@ -52,12 +68,7 @@
 
   async function getProfile() {
     const local = getLocalProfile();
-    if (local) return local;
-    const session = await getSession();
-    if (!session?.access_token) return null;
-    const {data,error} = await client.from('profiles').select('user_id,full_name,email,phone,country_code,marketing_opt_in,created_at').eq('user_id',session.user.id).maybeSingle();
-    if (error) throw error;
-    return data || {user_id:session.user.id,full_name:session.user.user_metadata?.full_name || '',email:session.user.email || '',phone:session.user.phone || ''};
+    return local;
   }
 
   function queueReading(reading) {
@@ -140,10 +151,6 @@
   }
 
   async function signOut() {
-    if (client) {
-      const {error} = await client.auth.signOut();
-      if (error) throw error;
-    }
     localStorage.removeItem(keys.localAccount);
     localStorage.removeItem(keys.backlog);
     localStorage.removeItem(keys.appointments);
@@ -152,6 +159,18 @@
     sessionStorage.removeItem('siaosTarotReport');
     localStorage.removeItem('siaosTarotDailyDrawV2');
     notify(null);
+  }
+
+  async function adminSignOut() {
+    if(!client)return;
+    const {error}=await client.auth.signOut();if(error)throw error;
+  }
+
+  async function deleteAccount() {
+    const profile=getLocalProfile();
+    if(!profile)throw new Error('This account is not available on this browser.');
+    const data=await publicRequest('accounts/delete',{method:'POST',body:{accountId:profile.accountId,deletionToken:profile.deletionToken,confirmed:true}});
+    await signOut();return data;
   }
 
   async function captureExistingReadings() {
@@ -184,10 +203,8 @@
     if(error)throw error;return data||[];
   }
 
-  if (client) client.auth.onAuthStateChange((_event,session) => {if(!getLocalProfile())notify(session);});
-
   window.SIAOSAccount = {
-    configured,client,getSession,getProfile,createAccount,signOut,
+    configured,client,getSession,getAdminSession,getProfile,publicRequest,createAccount,signOut,adminSignOut,deleteAccount,
     saveReading,getReadings,getReading,getReports,getReport,getOrders,captureExistingReadings,saveAppointment,getAppointments,
     onAuthChange(listener){listeners.add(listener);return () => listeners.delete(listener);}
   };

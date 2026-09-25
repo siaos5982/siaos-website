@@ -13,6 +13,34 @@ export function canonical(value) {
 }
 export const serviceNames = {kundli:'Kundli Analysis',numerology:'Numerology Analysis',vastu:'Vastu Analysis',tarot:'Tarot Reading',face:'Face Reading',paranormal:'Paranormal Consultation'};
 export const consultationFields = new Set(['fullName','legalName','dateOfBirth','birthCity','birthState','birthCountry','birthHour','birthMinute','birthPeriod','phone','whatsapp','currentCity','currentState','currentCountry','consultationMode','ownedPhoneNumbers','companyName','propertyStatus','propertyType','analysisMode','disclaimerAccepted','appointmentDate','appointmentStart','relatedService']);
+const accountToken = value => typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value);
+const cleanPhone = (countryCode,phone) => `+${String(countryCode || '').replace(/\D/g,'')}${String(phone || '').replace(/\D/g,'')}`;
+export function publicAccountInput(body) {
+  requireValue(body && ['signup','signin'].includes(body.mode), 'Choose Create Account or Sign In.');
+  const email=String(body.email || '').trim().toLowerCase();
+  const countryCode=String(body.countryCode || '').replace(/\D/g,'');
+  const phone=cleanPhone(countryCode,body.phone);
+  const fullName=String(body.fullName || '').trim().replace(/\s+/g,' ');
+  requireValue(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length<=254,'Enter a valid email address.');
+  requireValue(/^\+[1-9]\d{7,14}$/.test(phone),'Enter a valid international phone number.');
+  requireValue(body.mode!=='signup'||(fullName.length>=2&&fullName.length<=120),'Enter your full name.');
+  requireValue(!body.accountId||uuid(body.accountId),'Invalid account reference.');
+  requireValue(!body.deletionToken||accountToken(body.deletionToken),'Invalid account access token.');
+  return {mode:body.mode,email,phone,countryCode,fullName,marketingOptIn:Boolean(body.marketingOptIn),accountId:body.accountId||'',deletionToken:body.deletionToken||''};
+}
+export function publicAccountDeleteInput(body) {
+  requireValue(body?.confirmed===true,'Confirm account deletion.');
+  requireValue(uuid(body.accountId)&&accountToken(body.deletionToken),'This account cannot be verified on this browser.',403);
+  return {accountId:body.accountId,deletionToken:body.deletionToken};
+}
+export function publicConsultationInput(body) {
+  requireValue(uuid(body?.accountId)&&accountToken(body?.deletionToken),'Open your SIAOS account before booking.',401);
+  requireValue(uuid(body?.requestId),'Invalid booking reference.');
+  const value=consultationInput({...body,appointmentId:body.requestId});
+  const start=new Date(value.details.appointmentStart);
+  requireValue(Number.isFinite(start.getTime())&&start.getTime()>Date.now(),'Choose a future appointment time.');
+  return {...value,requestId:body.requestId,accountId:body.accountId,deletionToken:body.deletionToken,startAt:start.toISOString()};
+}
 export function consultationInput(body) {
   requireValue(Object.hasOwn(serviceNames, body.service), 'Choose a valid service.');
   requireValue(uuid(body.appointmentId), 'Choose a reserved appointment.');

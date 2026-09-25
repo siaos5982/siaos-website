@@ -1,9 +1,9 @@
 import {requireValue,consultationFields,HttpError} from './core.mjs';
 
 export const REPORTS={
-  clients:{table:'profiles',select:'user_id,full_name,email,phone,country_code,marketing_opt_in,created_at,updated_at',order:'created_at.asc,user_id.asc'},
-  consultations:{table:'consultation_requests',select:'id,user_id,appointment_id,service,service_name,related_service,details,status,consent_at,submitted_at,updated_at',order:'submitted_at.asc,id.asc'},
-  calendar:{table:'appointments',select:'id,user_id,service,related_service,consultation_mode,start_at,end_at,status,hold_expires_at,payment_reference,direct_payment_amount,direct_payment_method,direct_payment_reference,confirmed_at,consultation_requests(id,details,status)',order:'start_at.asc,id.asc'},
+  clients:{table:'browser_accounts',select:'id,full_name,email,phone,country_code,marketing_opt_in,terms_accepted_at,created_at,updated_at,last_opened_at',order:'created_at.asc,id.asc'},
+  consultations:{table:'browser_consultations',select:'id,account_id,service,service_name,related_service,appointment_start,consultation_mode,details,status,consent_at,submitted_at,updated_at',order:'submitted_at.asc,id.asc'},
+  calendar:{table:'browser_consultations',select:'id,account_id,service,related_service,appointment_start,consultation_mode,status,details,submitted_at,updated_at',order:'appointment_start.asc,id.asc'},
   orders:{table:'product_orders',select:'id,user_id,order_number,payment_reference,payment_status,status,currency,total,items,delivery_address,tracking_reference,ordered_at,updated_at',order:'ordered_at.asc,id.asc'},
   payments:{table:'payment_transactions',select:'id,user_id,gateway_order_id,gateway_payment_id,receipt,kind,item_slug,item_name,quantity,amount,refunded_amount,refund_status,currency,status,raw_status,method,paid_at,created_at',order:'created_at.asc,id.asc'},
   refunds:{table:'refund_requests',select:'id,transaction_id,user_id,source,reason,eligible_amount,gateway_refund_id,status,attempts,last_error,requested_at,processed_at,updated_at',order:'requested_at.asc,id.asc'},
@@ -62,9 +62,9 @@ export function sheetRows(name,rows){
   const fields=REPORTS[name].select.split(',').filter(k=>!k.includes('('));
   let clean=rows;
   if(name==='consultations')clean=rows.map(r=>{const {details,...base}=r;return {...base,...Object.fromEntries([...consultationFields].map(k=>[k,details?.[k]||'']))};});
-  if(name==='calendar')clean=rows.map(r=>{const {consultation_requests,...base}=r;const c=consultation_requests?.[0];return {...base,clientName:c?.details?.fullName||c?.details?.legalName||'',phone:c?.details?.phone||'',consultationId:c?.id||'',startIndia:new Date(r.start_at).toLocaleString('en-GB',{timeZone:'Asia/Kolkata'}),endIndia:new Date(r.end_at).toLocaleString('en-GB',{timeZone:'Asia/Kolkata'})};});
+  if(name==='calendar')clean=rows.map(r=>{const {details,...base}=r;const start=new Date(r.appointment_start);return {...base,clientName:details?.fullName||details?.legalName||'',phone:details?.phone||'',whatsapp:details?.whatsapp||'',startIndia:start.toLocaleString('en-GB',{timeZone:'Asia/Kolkata'}),endIndia:new Date(start.getTime()+1800000).toLocaleString('en-GB',{timeZone:'Asia/Kolkata'})};});
   const headers=[...new Set(clean.flatMap(r=>Object.keys(r)))];
-  if(!headers.length)return [name==='calendar'?['id','user_id','service','start_at','end_at','status']:fields];
+  if(!headers.length)return [name==='calendar'?['id','account_id','service','appointment_start','consultation_mode','status','clientName','phone','whatsapp','startIndia','endIndia']:fields];
   return [headers,...clean.map(r=>headers.map(k=>{const v=r[k];return v===null||v===undefined?'':typeof v==='object'?JSON.stringify(v):String(v);} ))];
 }
 export async function syncSheets(env,db){

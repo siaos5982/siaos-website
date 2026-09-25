@@ -7,7 +7,7 @@ const services = {
   paranormal: 'Paranormal Consultation'
 };
 
-// Client data is saved through the authenticated backend; Sheets sync is server-side.
+// Client data is saved through the restricted backend; Sheets sync is server-side.
 
 const relatedServices = {
   kundli: ['Complete Birth Chart Analysis','Marriage and Compatibility','Career and Wealth Guidance','Health Indicators','Dasha and Transit Timing','Personalised Remedies'],
@@ -228,18 +228,12 @@ function renderForm(service) {
       const details=Object.fromEntries(new FormData(form).entries());
       const session=await window.SIAOSAccount?.getSession();
       if(!session)throw new Error('Create your account before sending a booking request.');
-      let booking;
-      if(session.access_token&&window.SIAOS_AUTH_CONFIG?.backendUrl){
-        const {data:appointmentId,error}=await window.SIAOSAccount.client.rpc('hold_appointment_slot',{p_service:service,p_related_service:selectedRelatedService,p_consultation_mode:details.consultationMode||'On-call consultation',p_start_at:details.appointmentStart});
-        if(error)throw error;
-        booking={service,serviceName:services[service],relatedService:selectedRelatedService,appointmentId,appointmentStart:details.appointmentStart,details,createdAt:new Date().toISOString()};
-        const saved=await window.SIAOSApi('consultations',{method:'POST',body:booking});
-        booking.consultationId=saved.id;
-      }else{
-        const reference=`SIAOS-${Date.now().toString(36).toUpperCase()}`;
-        booking={id:reference,consultationId:reference,service,serviceName:services[service],relatedService:selectedRelatedService,appointmentStart:details.appointmentStart,start_at:details.appointmentStart,status:'requested',details,createdAt:new Date().toISOString()};
-        await window.SIAOSAccount.saveAppointment(booking);
-      }
+      const profile=await window.SIAOSAccount.getProfile();
+      if(!profile?.accountId||!profile?.deletionToken)throw new Error('Open your SIAOS account before booking.');
+      const requestId=crypto.randomUUID();
+      const saved=await window.SIAOSAccount.publicRequest('public/consultations',{method:'POST',body:{requestId,accountId:profile.accountId,deletionToken:profile.deletionToken,service,relatedService:selectedRelatedService,details}});
+      const booking={id:saved.id,consultationId:saved.id,service,serviceName:services[service],relatedService:selectedRelatedService,appointmentStart:details.appointmentStart,start_at:details.appointmentStart,status:saved.status,details,createdAt:new Date().toISOString()};
+      await window.SIAOSAccount.saveAppointment(booking);
       proceed.textContent='Opening WhatsApp…';
       location.assign(bookingWhatsAppUrl(booking));
     } catch(error) {

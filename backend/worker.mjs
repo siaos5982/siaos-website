@@ -1,4 +1,4 @@
-import {HttpError,requireValue,uuid,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
+import {HttpError,requireValue,uuid,publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
 import {syncSheets,REPORTS} from './sheets.mjs';
 
 const supabaseServerKey=env=>env.SUPABASE_SECRET_KEY||env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,6 +45,37 @@ async function authenticate(request,env,admin=false){
   return user;
 }
 async function limited(db,key,limit,seconds=60){requireValue(await rpc(db,'api_rate_limit',{p_key:key,p_limit:limit,p_seconds:seconds}),'Too many requests. Please try later.',429);}
+const randomToken=()=>[...crypto.getRandomValues(new Uint8Array(32))].map(value=>value.toString(16).padStart(2,'0')).join('');
+async function verifyBrowserAccount(db,env,accountId,deletionToken){
+  const [account]=await db(`browser_accounts?id=eq.${eq(accountId)}&limit=1`);
+  requireValue(account&&equalSignature(await hmac(backendConfig(env),deletionToken),account.deletion_token_hash),'This account cannot be verified on this browser.',403);
+  return account;
+}
+async function openBrowserAccount(body,db,env){
+  const input=publicAccountInput(body);let account;
+  if(input.accountId&&input.deletionToken){
+    account=await verifyBrowserAccount(db,env,input.accountId,input.deletionToken);
+  }else{
+    [account]=await db(`browser_accounts?email=eq.${eq(input.email)}&phone=eq.${eq(input.phone)}&limit=1`);
+  }
+  const deletionToken=randomToken();const deletionTokenHash=await hmac(backendConfig(env),deletionToken);const now=new Date().toISOString();
+  if(account){
+    const [saved]=await db(`browser_accounts?id=eq.${eq(account.id)}`,{method:'PATCH',body:{full_name:input.fullName||account.full_name,email:input.email,phone:input.phone,country_code:input.countryCode,marketing_opt_in:input.mode==='signup'?input.marketingOptIn:account.marketing_opt_in,deletion_token_hash:deletionTokenHash,last_opened_at:now,updated_at:now}});account=saved;
+  }else{
+    [account]=await db('browser_accounts',{method:'POST',body:{full_name:input.fullName||'SIAOS Member',email:input.email,phone:input.phone,country_code:input.countryCode,marketing_opt_in:input.marketingOptIn,deletion_token_hash:deletionTokenHash,terms_accepted_at:input.mode==='signup'?now:null,last_opened_at:now}});
+  }
+  return {account:{id:account.id,fullName:account.full_name,email:account.email,phone:account.phone,countryCode:account.country_code,marketingOptIn:account.marketing_opt_in,createdAt:account.created_at,updatedAt:account.updated_at},deletionToken};
+}
+async function deleteBrowserAccount(body,db,env){
+  const input=publicAccountDeleteInput(body);await verifyBrowserAccount(db,env,input.accountId,input.deletionToken);
+  await db(`browser_accounts?id=eq.${eq(input.accountId)}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+  return {deleted:true};
+}
+async function saveBrowserConsultation(body,db,env){
+  const input=publicConsultationInput(body);await verifyBrowserAccount(db,env,input.accountId,input.deletionToken);
+  const [saved]=await db('browser_consultations',{method:'POST',body:{id:input.requestId,account_id:input.accountId,service:input.service,service_name:input.serviceName,related_service:input.relatedService,appointment_start:input.startAt,consultation_mode:input.details.consultationMode,details:input.details,status:'requested',consent_at:new Date().toISOString()}});
+  return {id:saved.id,status:saved.status};
+}
 async function gateway(env,path,options={}){
   requireValue(env.RAZORPAY_KEY_ID&&env.RAZORPAY_KEY_SECRET,'Payment gateway is not configured.',503);
   const response=await fetch(`https://api.razorpay.com/v1/${path}`,{...options,headers:{Authorization:`Basic ${btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`)}`,'Content-Type':'application/json'},body:options.body?JSON.stringify(options.body):undefined,signal:AbortSignal.timeout(12000)});
@@ -151,7 +182,7 @@ export default {
       if(path!=='/api/webhooks/razorpay')requireValue(!origin||allowed.includes(origin),'Origin not allowed.',403);
       if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
       if(request.method==='GET'&&path==='/')return new Response(JSON.stringify({service:'SIAOS API',status:'ok',health:'/api/health'}),{headers});
-      if(request.method==='GET'&&path==='/api/health')return new Response(JSON.stringify({status:'ok',payments:env.PAYMENTS_ENABLED==='true',analytics:env.ANALYTICS_ENABLED==='true'}),{headers});
+      if(request.method==='GET'&&path==='/api/health')return new Response(JSON.stringify({status:'ok',payments:env.PAYMENTS_ENABLED==='true',analytics:env.ANALYTICS_ENABLED==='true',sheets:env.SHEETS_SYNC_ENABLED==='true'}),{headers});
       const db=database(env);let result;
       if(request.method==='POST'&&path==='/api/webhooks/razorpay')result=await webhook(request,env,db);
       else if(request.method==='POST'&&path==='/api/analytics'){
@@ -161,6 +192,15 @@ export default {
         const ipKey=await hmac(supabaseServerKey(env),request.headers.get('CF-Connecting-IP')||'unknown');
         await limited(db,`analytics:${ipKey}`,120);
         await db('analytics_events',{method:'POST',body:event});result={accepted:true};
+      }else if(request.method==='POST'&&path==='/api/accounts/open'){
+        const ipKey=await hmac(supabaseServerKey(env),request.headers.get('CF-Connecting-IP')||'unknown');await limited(db,`account:${ipKey}`,15,300);
+        result=await openBrowserAccount(await jsonBody(request),db,env);
+      }else if(request.method==='POST'&&path==='/api/accounts/delete'){
+        const ipKey=await hmac(supabaseServerKey(env),request.headers.get('CF-Connecting-IP')||'unknown');await limited(db,`account-delete:${ipKey}`,5,300);
+        result=await deleteBrowserAccount(await jsonBody(request),db,env);
+      }else if(request.method==='POST'&&path==='/api/public/consultations'){
+        const ipKey=await hmac(supabaseServerKey(env),request.headers.get('CF-Connecting-IP')||'unknown');await limited(db,`public-consultation:${ipKey}`,8,3600);
+        result=await saveBrowserConsultation(await jsonBody(request),db,env);
       }else{
         const admin=path.startsWith('/api/admin/');const user=await authenticate(request,env,admin);
         await limited(db,`${admin?'admin':'user'}:${user.id}`,admin?60:30);

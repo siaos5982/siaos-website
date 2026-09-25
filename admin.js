@@ -14,17 +14,8 @@
       if(key==='operator_action'&&type==='refunds'){
         if(['requested','processing','review_required'].includes(row.status)&&Number(row.eligible_amount)>0){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Reconcile / issue';button.onclick=()=>run(async()=>{button.disabled=true;status('Reconciling refund with Razorpay…');const result=await window.SIAOSApi('admin/refunds/'+row.id+'/issue',{method:'POST',body:{}});status('Refund '+result.status+'. Provider reference: '+(result.refundId||'pending'));await records();});td.append(button);}else td.textContent='—';
       }else if(key==='operator_action'&&type==='calendar'){
-        if(row.status==='requested'){
-          const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Confirm WhatsApp payment';button.onclick=()=>run(async()=>{
-            const rupees=prompt('Consultation amount received (₹):','');if(rupees===null)return;
-            const amount=Math.round(Number(rupees)*100);if(!Number.isSafeInteger(amount)||amount<=0)throw new Error('Enter a valid received amount.');
-            const method=prompt('Direct payment method (for example UPI or bank transfer):','UPI');if(method===null)return;
-            const reference=prompt('Payment reference:','');if(reference===null)return;
-            if(!confirm('Confirm this appointment and record the direct payment?'))return;
-            button.disabled=true;const result=await window.SIAOSApi('admin/consultations/'+row.id+'/confirm',{method:'POST',body:{amount,method,reference}});
-            status('Appointment confirmed. Direct payment recorded: ₹'+(result.amount/100).toLocaleString('en-IN'));await records();
-          });td.append(button);
-        }else td.textContent='—';
+        const phone=String(row.details?.whatsapp||row.details?.phone||'').replace(/\D/g,'');
+        if(phone){const link=document.createElement('a');link.className='btn';link.target='_blank';link.rel='noopener noreferrer';link.href='https://wa.me/'+phone+'?text='+encodeURIComponent('Namaste, this is SIAOS regarding your consultation booking '+row.id+'.');link.textContent='Open WhatsApp';td.append(link);}else td.textContent='—';
       }else if(row[key]&&typeof row[key]==='object'){
         const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='View details';pre.textContent=JSON.stringify(row[key],null,2);details.append(summary,pre);td.append(details);
       }else td.textContent=String(row[key]??'—');
@@ -44,9 +35,11 @@
     const data=await window.SIAOSApi('admin/summary');
     $('mfaPanel').hidden=true;$('mfaQr').replaceChildren();$('adminWorkspace').hidden=false;
     const metrics=$('adminMetrics');metrics.replaceChildren();
-    for(const [label,value]of Object.entries({'Page views (30 days)':data.totals.page_views,'Consented visitors':data.totals.visitors,'Consultation requests':data.business.consultations,'Paid purchases':data.business.paid_orders,'Razorpay net revenue (INR)':(data.business.revenue_paise/100).toLocaleString('en-IN'),'Refunds requiring attention':data.business.refunds_pending||0})){
+    for(const [label,value]of Object.entries({'Total customer accounts':data.business.customers||0,'New customers (30 days)':data.business.new_customers||0,'Consultation requests':data.business.consultations||0,'Consultations awaiting action':data.business.consultations_pending||0,'Product orders':data.business.product_orders||0,'Paid purchases':data.business.paid_orders||0,'Net revenue (INR)':((data.business.revenue_paise||0)/100).toLocaleString('en-IN'),'Refunds requiring attention':data.business.refunds_pending||0})){
       const card=document.createElement('article'),n=document.createElement('strong'),text=document.createElement('span');n.textContent=value;text.textContent=label;card.append(n,text);metrics.append(card);
     }
+    const sync=data.integrations||{},last=sync.sheets_last_success?new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Kolkata'}).format(new Date(sync.sheets_last_success))+' IST':'Not synced yet';
+    $('sheetSyncState').textContent='Google Sheets status: '+last+(sync.sheets_last_error?' · Attention required':' · Automatic hourly sync enabled');
     calendar();await records();status('Administrator verified. Times are shown in IST; raw timestamps retain their timezone.');
   }
   async function run(fn){if(busy)return;busy=true;try{await fn();}catch(e){status(e.message||'Operation failed.');}finally{busy=false;}}
@@ -68,7 +61,7 @@
     const result=await window.SIAOSApi('admin/refunds',{method:'POST',body:{transactionId:$('refundTransaction').value.trim(),amount,reason:$('refundReason').value.trim()}});
     status('Refund '+(result.refund?.status||result.status)+'. Request '+result.id+'.');$('refundForm').reset();if($('recordType').value==='refunds'){offset=0;await records();}
   });};
-  $('adminSignOut').onclick=async()=>{await account.signOut();location.replace('login.html');};
+  $('adminSignOut').onclick=async()=>{await account.adminSignOut();location.replace('index.html');};
   $('enrolMfa').onclick=()=>run(async()=>{
     const {data,error}=await account.client.auth.mfa.enroll({factorType:'totp',friendlyName:'SIAOS administrator'});if(error)throw error;factorId=data.id;
     const img=document.createElement('img');img.alt='Scan this QR code with your authenticator app';img.src=data.totp.qr_code.startsWith('data:')?data.totp.qr_code:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(data.totp.qr_code);$('mfaQr').replaceChildren(img);$('enrolMfa').disabled=true;status('Scan the code privately, then enter a code from your authenticator.');
@@ -77,8 +70,9 @@
     if(!factorId)throw new Error('Set up an authenticator first.');
     const {error}=await account.client.auth.mfa.challengeAndVerify({factorId,code:$('mfaCode').value});if(error)throw error;$('mfaCode').value='';await openDashboard();
   });};
-  run(async()=>{
-    const session=await account.getSession();if(!session?.access_token){location.replace('login.html?mode=signin&next=admin.html');return;}
+  async function prepareAdmin(){
+    const session=await account.getAdminSession();if(!session?.access_token){$('adminLoginPanel').hidden=false;status('Administrator sign-in is required.');return;}
+    $('adminLoginPanel').hidden=true;
     const india=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit'}).format(new Date());
     $('calendarMonth').value=/^\d{4}-\d{2}$/.test(india)?india:new Date().toISOString().slice(0,7);
     const {data,error}=await account.client.auth.mfa.getAuthenticatorAssuranceLevel();if(error)throw error;
@@ -86,5 +80,7 @@
     const factors=await account.client.auth.mfa.listFactors();if(factors.error)throw factors.error;
     factorId=factors.data.totp?.find(f=>f.status==='verified')?.id||'';
     $('enrolMfa').hidden=Boolean(factorId);$('mfaPanel').hidden=false;status('Verify your authenticator. Server-side admin approval is also required.');
-  });
+  }
+  $('adminLoginForm').onsubmit=event=>{event.preventDefault();run(async()=>{status('Signing in securely…');const {error}=await account.client.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});if(error)throw error;$('adminPassword').value='';await prepareAdmin();});};
+  run(prepareAdmin);
 })();
