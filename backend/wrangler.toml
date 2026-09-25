@@ -11,6 +11,7 @@ ANALYTICS_ENABLED = "false"
 SHEETS_SYNC_ENABLED = "false"
 SHEETS_MAX_ROWS = "10000"
 GOOGLE_SHEET_ID = "1TqpXUqp17jlVoy2B4d9kbMLot1URN8xFElhwRWEsq2o"
+SHEETS_PULL_TOKEN_HASH = "c37703d93f38df99d849b4e094e6b7b64c50b79d37aaa78376de20358f2458e5"
 
 # Optional hourly sync; enable only after the restricted reporting Sheet is ready.
 # [triggers]

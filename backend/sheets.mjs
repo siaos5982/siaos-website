@@ -67,6 +67,25 @@ export function sheetRows(name,rows){
   if(!headers.length)return [name==='calendar'?['id','account_id','service','appointment_start','consultation_mode','status','clientName','phone','whatsapp','startIndia','endIndia']:fields];
   return [headers,...clean.map(r=>headers.map(k=>{const v=r[k];return v===null||v===undefined?'':typeof v==='object'?JSON.stringify(v):String(v);} ))];
 }
+export async function reportRows(name,db,max=10000){
+  requireValue(Object.hasOwn(REPORTS,name),'Invalid report.');
+  requireValue(Number.isInteger(max)&&max>0&&max<=10000,'Invalid export limit.',503);
+  const spec=REPORTS[name],rows=[];
+  for(let offset=0;offset<=max;offset+=500){
+    const batch=await db(`${spec.table}?select=${spec.select}&order=${spec.order}&limit=500&offset=${offset}`);
+    rows.push(...batch);requireValue(rows.length<=max,`The ${name} export exceeds its configured limit; increase capacity before syncing.`,409);
+    if(batch.length<500)break;
+  }
+  return rows;
+}
+export function csvRows(rows){
+  const cell=value=>{
+    let text=String(value??'').replace(/\r?\n/g,' ');
+    if(/^[=+\-@]/.test(text))text="'"+text;
+    return `"${text.replace(/"/g,'""')}"`;
+  };
+  return '\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n');
+}
 export async function syncSheets(env,db){
   requireValue(env.SHEETS_SYNC_ENABLED==='true'&&/^[A-Za-z0-9_-]+$/.test(env.GOOGLE_SHEET_ID||''),'Google Sheets sync is not enabled.',503);
   const locked=await db('rpc/claim_sheets_sync',{method:'POST',body:{}});requireValue(locked,'A Sheets sync is already in progress.',409);
@@ -80,12 +99,7 @@ export async function syncSheets(env,db){
     const snapshot=await google('?fields=sheets.properties');
     const counts={};
     for(const [name,spec] of Object.entries(REPORTS)){
-      const rows=[];
-      for(let offset=0;offset<=max;offset+=500){
-        const batch=await db(`${spec.table}?select=${spec.select}&order=${spec.order}&limit=500&offset=${offset}`);
-        rows.push(...batch);requireValue(rows.length<=max,`The ${name} export exceeds its configured limit; increase capacity before syncing.`,409);
-        if(batch.length<500)break;
-      }
+      const rows=await reportRows(name,db,max);
       const values=sheetRows(name,rows);const title=SHEET_TITLES[name];let existing=snapshot.sheets?.find(s=>s.properties.title===title);
       if(!existing){const added=await google(':batchUpdate',{method:'POST',body:{requests:[{addSheet:{properties:{title,gridProperties:{rowCount:Math.max(values.length,1000),columnCount:Math.max(values[0].length,26)}}}}]}});existing=added.replies[0].addSheet;}
       const rowCount=Math.max(existing.properties.gridProperties.rowCount,values.length);

@@ -39,7 +39,7 @@
       const card=document.createElement('article'),n=document.createElement('strong'),text=document.createElement('span');n.textContent=value;text.textContent=label;card.append(n,text);metrics.append(card);
     }
     const sync=data.integrations||{},last=sync.sheets_last_success?new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Kolkata'}).format(new Date(sync.sheets_last_success))+' IST':'Not synced yet';
-    $('sheetSyncState').textContent='Google Sheets status: '+last+(sync.sheets_last_error?' · Attention required':' · Automatic hourly sync enabled');
+    $('sheetSyncState').textContent='Google Sheets status: '+last+(sync.sheets_last_error?' · Attention required':' · Protected automatic import active');
     calendar();await records();status('Administrator verified. Times are shown in IST; raw timestamps retain their timezone.');
   }
   async function run(fn){if(busy)return;busy=true;try{await fn();}catch(e){status(e.message||'Operation failed.');}finally{busy=false;}}
@@ -48,7 +48,6 @@
   $('previousPage').onclick=()=>run(async()=>{offset=Math.max(0,offset-100);await records();});
   $('nextPage').onclick=()=>run(async()=>{offset+=100;await records();});
   $('calendarRefresh').onclick=calendar;
-  $('syncSheets').onclick=()=>run(async()=>{status('Syncing restricted operational Sheets…');const result=await window.SIAOSApi('admin/sheets-sync',{method:'POST',body:{}});status('Sheets sync complete: '+Object.entries(result.counts).map(([k,v])=>k+' '+v).join(', '));});
   $('catalogForm').onsubmit=event=>{event.preventDefault();run(async()=>{
     const unitAmount=Math.round(Number($('catalogPrice').value)*100),shippingAmount=Math.round(Number($('catalogShipping').value)*100);
     if(!Number.isSafeInteger(unitAmount)||!Number.isSafeInteger(shippingAmount))throw new Error('Enter valid rupee amounts.');

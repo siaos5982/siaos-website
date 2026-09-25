@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
-import {sheetRows,SHEET_TITLES,overviewRows} from '../backend/sheets.mjs';
+import {sheetRows,csvRows,SHEET_TITLES,overviewRows} from '../backend/sheets.mjs';
 import worker,{database} from '../backend/worker.mjs';
 
 const id='22222222-2222-4222-8222-222222222222';
@@ -32,6 +32,7 @@ test('HMAC SHA256 matches a known test vector',async()=>{const s=await hmac('key
 test('analytics strips query strings and full referrer details',()=>{const e=analyticsInput({consent:true,event_name:'page_view',session_id:id,anonymous_id:id,path:'/index.html',referrer:'https://example.org/path?email=private@example.org',metadata:{email:'private'},device:'mobile'});assert.equal(e.referrer,'example.org');assert.equal(e.metadata.email,undefined);});
 test('analytics rejects URL queries and absent consent',()=>{assert.throws(()=>analyticsInput({consent:false}));assert.throws(()=>analyticsInput({consent:true,event_name:'page_view',session_id:id,anonymous_id:id,path:'/login.html?otp=123456'}));});
 test('sheet consultation export uses approved fields only',()=>{const rows=sheetRows('consultations',[{id,details:{fullName:'=IMPORTXML("evil")',access_token:'secret'}}]);assert.ok(rows[0].includes('fullName'));assert.ok(!JSON.stringify(rows).includes('secret'));assert.ok(JSON.stringify(rows).includes('IMPORTXML'));});
+test('CSV exports neutralise spreadsheet formulas and escape quotes',()=>{const csv=csvRows([['name','note'],['=IMPORTXML("evil")','a "quote"']]);assert.match(csv,/"'=IMPORTXML\(""evil""\)"/);assert.match(csv,/"a ""quote"""/);});
 test('calendar export includes consultation name and IST time',()=>{const rows=sheetRows('calendar',[{id,appointment_start:'2026-09-18T04:30:00Z',details:{fullName:'Test',phone:'123'}}]);assert.ok(rows[0].includes('clientName'));assert.ok(rows[1].includes('Test'));assert.ok(rows[1].some(v=>v.includes('10:00:00')));});
 test('Sheets sync targets the prepared workbook tabs and builds dashboard counts',()=>{assert.equal(SHEET_TITLES.clients,'Clients');assert.equal(SHEET_TITLES.refunds,'Refunds');assert.equal(SHEET_TITLES.catalog,'Catalog');const rows=overviewRows({clients:2,payments:3},'2026-09-20T00:00:00.000Z');assert.deepEqual(rows[4],['Clients',2,'Submitted profile and contact records']);assert.deepEqual(rows.at(-1),['Last refresh','2026-09-20T00:00:00.000Z','Automatic backend snapshot']);});
 test('API rejects disallowed browser origin',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health',{headers:{Origin:'https://evil.test'}}),{ALLOWED_ORIGINS:'https://siaos.in'});assert.equal(r.status,403);assert.equal(r.headers.get('access-control-allow-origin'),null);});

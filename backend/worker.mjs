@@ -1,5 +1,5 @@
 import {HttpError,requireValue,uuid,publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
-import {syncSheets,REPORTS} from './sheets.mjs';
+import {syncSheets,reportRows,sheetRows,csvRows,REPORTS} from './sheets.mjs';
 
 const supabaseServerKey=env=>env.SUPABASE_SECRET_KEY||env.SUPABASE_SERVICE_ROLE_KEY;
 function backendConfig(env){
@@ -46,6 +46,18 @@ async function authenticate(request,env,admin=false){
 }
 async function limited(db,key,limit,seconds=60){requireValue(await rpc(db,'api_rate_limit',{p_key:key,p_limit:limit,p_seconds:seconds}),'Too many requests. Please try later.',429);}
 const randomToken=()=>[...crypto.getRandomValues(new Uint8Array(32))].map(value=>value.toString(16).padStart(2,'0')).join('');
+const sha256=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+async function pullSheetReport(url,env,db){
+  const name=url.searchParams.get('report')||'',token=url.searchParams.get('token')||'';
+  requireValue(Object.hasOwn(REPORTS,name)&&/^[A-Za-z0-9_-]{43}$/.test(token),'Invalid Sheets export request.',401);
+  requireValue(/^[a-f0-9]{64}$/.test(env.SHEETS_PULL_TOKEN_HASH||''),'Sheets export is not configured.',503);
+  requireValue(equalSignature(await sha256(token),env.SHEETS_PULL_TOKEN_HASH),'Invalid Sheets export request.',401);
+  await limited(db,'sheets-pull',120,3600);
+  const rows=await reportRows(name,db,Number(env.SHEETS_MAX_ROWS||10000));
+  const refreshedAt=new Date().toISOString();
+  await db('integration_jobs?name=eq.sheets',{method:'PATCH',body:{locked_until:null,last_success:refreshedAt,last_error:null}}).catch(()=>{});
+  return new Response(csvRows(sheetRows(name,rows)),{headers:{'Content-Type':'text/csv; charset=utf-8','Cache-Control':'no-store, private','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow'}});
+}
 async function verifyBrowserAccount(db,env,accountId,deletionToken){
   const [account]=await db(`browser_accounts?id=eq.${eq(accountId)}&limit=1`);
   requireValue(account&&equalSignature(await hmac(backendConfig(env),deletionToken),account.deletion_token_hash),'This account cannot be verified on this browser.',403);
@@ -182,8 +194,9 @@ export default {
       if(path!=='/api/webhooks/razorpay')requireValue(!origin||allowed.includes(origin),'Origin not allowed.',403);
       if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
       if(request.method==='GET'&&path==='/')return new Response(JSON.stringify({service:'SIAOS API',status:'ok',health:'/api/health'}),{headers});
-      if(request.method==='GET'&&path==='/api/health')return new Response(JSON.stringify({status:'ok',payments:env.PAYMENTS_ENABLED==='true',analytics:env.ANALYTICS_ENABLED==='true',sheets:env.SHEETS_SYNC_ENABLED==='true'}),{headers});
+      if(request.method==='GET'&&path==='/api/health')return new Response(JSON.stringify({status:'ok',payments:env.PAYMENTS_ENABLED==='true',analytics:env.ANALYTICS_ENABLED==='true',sheets:env.SHEETS_SYNC_ENABLED==='true'||Boolean(env.SHEETS_PULL_TOKEN_HASH)}),{headers});
       const db=database(env);let result;
+      if(request.method==='GET'&&path==='/api/sheets/export')return pullSheetReport(url,env,db);
       if(request.method==='POST'&&path==='/api/webhooks/razorpay')result=await webhook(request,env,db);
       else if(request.method==='POST'&&path==='/api/analytics'){
         requireValue(env.ANALYTICS_ENABLED==='true','Analytics disabled.',503);
