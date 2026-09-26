@@ -2,6 +2,7 @@ import {requireValue,consultationFields,HttpError} from './core.mjs';
 
 export const REPORTS={
   clients:{table:'browser_accounts',select:'id,full_name,email,phone,country_code,marketing_opt_in,terms_accepted_at,created_at,updated_at,last_opened_at',order:'created_at.asc,id.asc'},
+  deleted_accounts:{table:'account_deletion_audit',select:'account_id,account_created_at,deleted_at,deletion_source',order:'deleted_at.desc,account_id.asc'},
   consultations:{table:'browser_consultations',select:'id,account_id,service,service_name,related_service,appointment_start,consultation_mode,details,status,consent_at,submitted_at,updated_at',order:'submitted_at.asc,id.asc'},
   calendar:{table:'browser_consultations',select:'id,account_id,service,related_service,appointment_start,consultation_mode,status,details,submitted_at,updated_at',order:'appointment_start.asc,id.asc'},
   orders:{table:'product_orders',select:'id,user_id,order_number,payment_reference,payment_status,status,currency,total,items,delivery_address,tracking_reference,ordered_at,updated_at',order:'ordered_at.asc,id.asc'},
@@ -14,6 +15,7 @@ export const REPORTS={
 };
 export const SHEET_TITLES=Object.freeze({
   clients:'Clients',
+  deleted_accounts:'Deleted Accounts',
   consultations:'Consultations',
   calendar:'Calendar',
   orders:'Orders',
@@ -31,6 +33,7 @@ export function overviewRows(counts,refreshedAt){
     [],
     ['Metric','Records','Notes'],
     ['Clients',counts.clients??0,'Submitted profile and contact records'],
+    ['Deleted Accounts',counts.deleted_accounts??0,'Privacy-safe deletion references and dates'],
     ['Consultations',counts.consultations??0,'Requests, consent and appointment references'],
     ['Calendar',counts.calendar??0,'Appointment times, status and direct payment references'],
     ['Orders',counts.orders??0,'Product fulfilment and delivery details'],
@@ -60,6 +63,10 @@ async function googleToken(env){
 // JSON is exported only from bounded, approved business fields. No raw session/auth objects.
 export function sheetRows(name,rows){
   const fields=REPORTS[name].select.split(',').filter(k=>!k.includes('('));
+  if(name==='deleted_accounts')return [
+    ['Account Reference','Status','Account Created (UTC)','Deleted At (UTC)','Deleted At (IST)','Days Since Deletion','Deletion Source'],
+    ...rows.map(r=>{const deleted=new Date(r.deleted_at);return [r.account_id,'Deleted',r.account_created_at||'',r.deleted_at,deleted.toLocaleString('en-GB',{timeZone:'Asia/Kolkata'}),String(Math.max(0,Math.floor((Date.now()-deleted.getTime())/86400000))),r.deletion_source];})
+  ];
   let clean=rows;
   if(name==='consultations')clean=rows.map(r=>{const {details,...base}=r;return {...base,...Object.fromEntries([...consultationFields].map(k=>[k,details?.[k]||'']))};});
   if(name==='calendar')clean=rows.map(r=>{const {details,...base}=r;const start=new Date(r.appointment_start);return {...base,clientName:details?.fullName||details?.legalName||'',phone:details?.phone||'',whatsapp:details?.whatsapp||'',startIndia:start.toLocaleString('en-GB',{timeZone:'Asia/Kolkata'}),endIndia:new Date(start.getTime()+1800000).toLocaleString('en-GB',{timeZone:'Asia/Kolkata'})};});

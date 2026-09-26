@@ -80,8 +80,9 @@ async function openBrowserAccount(body,db,env){
 }
 async function deleteBrowserAccount(body,db,env){
   const input=publicAccountDeleteInput(body);await verifyBrowserAccount(db,env,input.accountId,input.deletionToken);
-  await db(`browser_accounts?id=eq.${eq(input.accountId)}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
-  return {deleted:true};
+  const deleted=await rpc(db,'delete_browser_account_with_audit',{p_account_id:input.accountId});
+  requireValue(deleted?.deleted,'This account is no longer available.',404);
+  return deleted;
 }
 async function saveBrowserConsultation(body,db,env){
   const input=publicConsultationInput(body);await verifyBrowserAccount(db,env,input.accountId,input.deletionToken);
