@@ -50,8 +50,9 @@ const sha256=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256
 async function pullSheetReport(url,env,db){
   const name=url.searchParams.get('report')||'',token=url.searchParams.get('token')||'';
   requireValue(Object.hasOwn(REPORTS,name)&&/^[A-Za-z0-9_-]{43}$/.test(token),'Invalid Sheets export request.',401);
-  requireValue(/^[a-f0-9]{64}$/.test(env.SHEETS_PULL_TOKEN_HASH||''),'Sheets export is not configured.',503);
-  requireValue(equalSignature(await sha256(token),env.SHEETS_PULL_TOKEN_HASH),'Invalid Sheets export request.',401);
+  const expectedHash=name==='deleted_accounts'?env.DELETION_SHEET_TOKEN_HASH:env.SHEETS_PULL_TOKEN_HASH;
+  requireValue(/^[a-f0-9]{64}$/.test(expectedHash||''),'Sheets export is not configured.',503);
+  requireValue(equalSignature(await sha256(token),expectedHash),'Invalid Sheets export request.',401);
   await limited(db,'sheets-pull',120,3600);
   const rows=await reportRows(name,db,Number(env.SHEETS_MAX_ROWS||10000));
   const refreshedAt=new Date().toISOString();
