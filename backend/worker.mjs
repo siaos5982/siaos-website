@@ -205,7 +205,7 @@ export default {
       if(request.method==='GET'&&path==='/')return new Response(JSON.stringify({service:'SIAOS API',status:'ok',health:'/api/health'}),{headers});
       if(request.method==='GET'&&path==='/api/health')return new Response(JSON.stringify({status:'ok',payments:env.PAYMENTS_ENABLED==='true',analytics:env.ANALYTICS_ENABLED==='true',sheets:env.SHEETS_SYNC_ENABLED==='true'||Boolean(env.SHEETS_PULL_TOKEN_HASH)}),{headers});
       const db=database(env);let result;
-      if(request.method==='GET'&&path==='/api/sheets/export')return pullSheetReport(url,env,db);
+      if(request.method==='GET'&&path==='/api/sheets/export')return await pullSheetReport(url,env,db);
       if(request.method==='POST'&&path==='/api/webhooks/razorpay')result=await webhook(request,env,db);
       else if(request.method==='POST'&&path==='/api/analytics'){
         requireValue(env.ANALYTICS_ENABLED==='true','Analytics disabled.',503);

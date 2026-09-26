@@ -41,6 +41,7 @@ test('Sheets sync targets the prepared workbook tabs and builds dashboard counts
 test('API rejects disallowed browser origin',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health',{headers:{Origin:'https://evil.test'}}),{ALLOWED_ORIGINS:'https://siaos.in'});assert.equal(r.status,403);assert.equal(r.headers.get('access-control-allow-origin'),null);});
 test('health does not expose credentials',async()=>{const r=await worker.fetch(new Request('https://api.test/api/health'),{SUPABASE_SERVICE_ROLE_KEY:'secret'});assert.equal(r.status,200);assert.ok(!(await r.text()).includes('secret'));});
 test('API root returns a clean service status without requiring secrets',async()=>{const r=await worker.fetch(new Request('https://api.test/'),{});assert.equal(r.status,200);assert.deepEqual(await r.json(),{service:'SIAOS API',status:'ok',health:'/api/health'});});
+test('restricted Sheets exports reject a token from another feed',async()=>{const r=await worker.fetch(new Request(`https://api.test/api/sheets/export?report=orders&token=${'a'.repeat(43)}`),{SUPABASE_URL:'https://db.test',SUPABASE_SECRET_KEY:'sb_secret_test',ORDERS_SHEET_TOKEN_HASH:'0'.repeat(64)});assert.equal(r.status,401);});
 test('Supabase secret keys stay out of the Authorization header for server REST calls',async()=>{
   const original=globalThis.fetch;let headers;
   globalThis.fetch=async(_url,options={})=>{headers=options.headers;return new Response('[]',{status:200});};

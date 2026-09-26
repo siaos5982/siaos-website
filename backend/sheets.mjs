@@ -82,7 +82,7 @@ export function sheetRows(name,rows){
   ];
   if(name==='orders')return [
     ['Order ID','Client ID','Order Number','Payment Reference','Payment Status','Order Status','Currency','Total (INR)','Items','Delivery Address','Tracking Reference','Ordered (UTC)','Updated (UTC)'],
-    ...rows.map(r=>[r.id,r.user_id,r.order_number,r.payment_reference,r.payment_status,r.status,r.currency,Number.isInteger(r.total)?(r.total/100).toFixed(2):'',r.items,r.delivery_address,r.tracking_reference,r.ordered_at,r.updated_at].map(value))
+    ...rows.map(r=>[r.id,r.user_id,r.order_number,r.payment_reference,r.payment_status,r.status,r.currency,r.total!==null&&r.total!==undefined&&Number.isFinite(Number(r.total))?(Number(r.total)/100).toFixed(2):'',r.items,r.delivery_address,r.tracking_reference,r.ordered_at,r.updated_at].map(value))
   ];
   const fields=REPORTS[name].select.split(',').filter(k=>!k.includes('('));
   return [fields,...rows.map(r=>fields.map(k=>value(r[k])))];
