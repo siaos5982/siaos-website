@@ -62,17 +62,30 @@ async function googleToken(env){
 }
 // JSON is exported only from bounded, approved business fields. No raw session/auth objects.
 export function sheetRows(name,rows){
-  const fields=REPORTS[name].select.split(',').filter(k=>!k.includes('('));
+  const value=v=>v===null||v===undefined?'':typeof v==='object'?JSON.stringify(v):String(v);
+  const india=v=>{const date=new Date(v);return Number.isFinite(date.getTime())?date.toLocaleString('en-GB',{timeZone:'Asia/Kolkata'}):'';};
   if(name==='deleted_accounts')return [
     ['Account Reference','Status','Account Created (UTC)','Deleted At (UTC)','Deleted At (IST)','Days Since Deletion','Deletion Source'],
     ...rows.map(r=>{const deleted=new Date(r.deleted_at);return [r.account_id,'Deleted',r.account_created_at||'',r.deleted_at,deleted.toLocaleString('en-GB',{timeZone:'Asia/Kolkata'}),String(Math.max(0,Math.floor((Date.now()-deleted.getTime())/86400000))),r.deletion_source];})
   ];
-  let clean=rows;
-  if(name==='consultations')clean=rows.map(r=>{const {details,...base}=r;return {...base,...Object.fromEntries([...consultationFields].map(k=>[k,details?.[k]||'']))};});
-  if(name==='calendar')clean=rows.map(r=>{const {details,...base}=r;const start=new Date(r.appointment_start);return {...base,clientName:details?.fullName||details?.legalName||'',phone:details?.phone||'',whatsapp:details?.whatsapp||'',startIndia:start.toLocaleString('en-GB',{timeZone:'Asia/Kolkata'}),endIndia:new Date(start.getTime()+1800000).toLocaleString('en-GB',{timeZone:'Asia/Kolkata'})};});
-  const headers=[...new Set(clean.flatMap(r=>Object.keys(r)))];
-  if(!headers.length)return [name==='calendar'?['id','account_id','service','appointment_start','consultation_mode','status','clientName','phone','whatsapp','startIndia','endIndia']:fields];
-  return [headers,...clean.map(r=>headers.map(k=>{const v=r[k];return v===null||v===undefined?'':typeof v==='object'?JSON.stringify(v):String(v);} ))];
+  if(name==='clients')return [
+    ['Client ID','Name','Email','Phone','Country Code','Marketing Opt-in','Terms Accepted (UTC)','Created (UTC)','Updated (UTC)','Last Opened (UTC)'],
+    ...rows.map(r=>[r.id,r.full_name,r.email,r.phone,r.country_code,r.marketing_opt_in?'Yes':'No',r.terms_accepted_at,r.created_at,r.updated_at,r.last_opened_at].map(value))
+  ];
+  if(name==='consultations')return [
+    ['Request ID','Client ID','Service','Consultation','Appointment (UTC)','Appointment (IST)','Mode','Status','Name','Date of Birth','Phone','WhatsApp','Current City','Current State','Current Country','Company','Property Status','Property Type','Analysis Mode','Submitted (UTC)','Consent (UTC)','Submitted Details (JSON)'],
+    ...rows.map(r=>{const d=r.details||{};const details=Object.fromEntries([...consultationFields].filter(k=>d[k]!==undefined).map(k=>[k,d[k]]));return [r.id,r.account_id,r.service_name||r.service,r.related_service,r.appointment_start,india(r.appointment_start),r.consultation_mode||d.consultationMode,r.status,d.fullName||d.legalName,d.dateOfBirth,d.phone,d.whatsapp,d.currentCity,d.currentState,d.currentCountry,d.companyName,d.propertyStatus,d.propertyType,d.analysisMode,r.submitted_at,r.consent_at,details].map(value);})
+  ];
+  if(name==='calendar')return [
+    ['Appointment ID','Appointment (UTC)','Appointment (IST)','Service','Consultation','Mode','Status','Client','Phone','WhatsApp','Submitted (UTC)'],
+    ...rows.map(r=>{const d=r.details||{};return [r.id,r.appointment_start,india(r.appointment_start),r.service,r.related_service,r.consultation_mode||d.consultationMode,r.status,d.fullName||d.legalName,d.phone,d.whatsapp,r.submitted_at].map(value);})
+  ];
+  if(name==='orders')return [
+    ['Order ID','Client ID','Order Number','Payment Reference','Payment Status','Order Status','Currency','Total (INR)','Items','Delivery Address','Tracking Reference','Ordered (UTC)','Updated (UTC)'],
+    ...rows.map(r=>[r.id,r.user_id,r.order_number,r.payment_reference,r.payment_status,r.status,r.currency,Number.isInteger(r.total)?(r.total/100).toFixed(2):'',r.items,r.delivery_address,r.tracking_reference,r.ordered_at,r.updated_at].map(value))
+  ];
+  const fields=REPORTS[name].select.split(',').filter(k=>!k.includes('('));
+  return [fields,...rows.map(r=>fields.map(k=>value(r[k])))];
 }
 export async function reportRows(name,db,max=10000){
   requireValue(Object.hasOwn(REPORTS,name),'Invalid report.');

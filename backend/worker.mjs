@@ -50,10 +50,17 @@ const sha256=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256
 async function pullSheetReport(url,env,db){
   const name=url.searchParams.get('report')||'',token=url.searchParams.get('token')||'';
   requireValue(Object.hasOwn(REPORTS,name)&&/^[A-Za-z0-9_-]{43}$/.test(token),'Invalid Sheets export request.',401);
-  const expectedHash=name==='deleted_accounts'?env.DELETION_SHEET_TOKEN_HASH:env.SHEETS_PULL_TOKEN_HASH;
+  const restrictedHashes={
+    clients:env.CLIENTS_SHEET_TOKEN_HASH,
+    deleted_accounts:env.DELETION_SHEET_TOKEN_HASH,
+    consultations:env.CONSULTATIONS_SHEET_TOKEN_HASH,
+    calendar:env.CALENDAR_SHEET_TOKEN_HASH,
+    orders:env.ORDERS_SHEET_TOKEN_HASH
+  };
+  const expectedHash=restrictedHashes[name]||env.SHEETS_PULL_TOKEN_HASH;
   requireValue(/^[a-f0-9]{64}$/.test(expectedHash||''),'Sheets export is not configured.',503);
   requireValue(equalSignature(await sha256(token),expectedHash),'Invalid Sheets export request.',401);
-  await limited(db,'sheets-pull',120,3600);
+  await limited(db,`sheets-pull-${name}`,120,3600);
   const rows=await reportRows(name,db,Number(env.SHEETS_MAX_ROWS||10000));
   const refreshedAt=new Date().toISOString();
   await db('integration_jobs?name=eq.sheets',{method:'PATCH',body:{locked_until:null,last_success:refreshedAt,last_error:null}}).catch(()=>{});
