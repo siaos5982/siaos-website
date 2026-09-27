@@ -143,6 +143,19 @@ export function operatorRefundInput(body) {
   requireValue(typeof body.reason === 'string' && body.reason.trim().length >= 5 && body.reason.trim().length <= 500, 'Enter a clear refund reason.');
   return {transactionId:body.transactionId,amount:body.amount,reason:body.reason.trim()};
 }
+export function browserConsultationStatusInput(body) {
+  const status=String(body?.status||'').trim();
+  requireValue(['requested','contacted','confirmed','completed','cancelled','no_show'].includes(status),'Choose a valid consultation status.');
+  return {status};
+}
+export function orderFulfillmentInput(body) {
+  const status=String(body?.status||'').trim();
+  const trackingReference=String(body?.trackingReference||'').trim();
+  requireValue(['awaiting_payment','confirmed','processing','dispatched','delivered','cancelled'].includes(status),'Choose a valid order status.');
+  requireValue(trackingReference.length<=120,'Tracking reference is too long.');
+  requireValue(status!=='dispatched'||trackingReference.length>=2,'Add a tracking reference before dispatching an order.');
+  return {status,trackingReference};
+}
 export async function hmac(secret, value) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
   return [...new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value)))].map(n => n.toString(16).padStart(2,'0')).join('');

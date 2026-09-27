@@ -1,4 +1,4 @@
-import {HttpError,requireValue,uuid,publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
+import {HttpError,requireValue,uuid,publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,browserConsultationStatusInput,orderFulfillmentInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from './core.mjs';
 import {syncSheets,reportRows,sheetRows,csvRows,REPORTS} from './sheets.mjs';
 
 const supabaseServerKey=env=>env.SUPABASE_SECRET_KEY||env.SUPABASE_SERVICE_ROLE_KEY;
@@ -21,6 +21,8 @@ export function database(env) {
   };
 }
 const rpc=(db,name,body)=>db(`rpc/${name}`,{method:'POST',body});
+const ADMIN_REPORTS={...REPORTS,audits:{table:'admin_audit_log',select:'id,user_id,action,target,created_at',order:'created_at.desc,id.desc'}};
+const adminOrders={clients:'created_at.desc,id.desc',deleted_accounts:'deleted_at.desc,account_id.asc',consultations:'submitted_at.desc,id.desc',calendar:'appointment_start.desc,id.desc',orders:'ordered_at.desc,id.desc',payments:'created_at.desc,id.desc',refunds:'requested_at.desc,id.desc',catalog:'kind.asc,name.asc,variant.asc',readings:'created_at.desc,id.desc',visitors:'occurred_at.desc,id.desc',reports:'purchased_at.desc,id.desc',audits:'created_at.desc,id.desc'};
 async function readBody(request,max=24000) {
   requireValue(Number(request.headers.get('content-length')||0)<=max,'Request too large.',413);
   const reader=request.body?.getReader(); if(!reader) throw new HttpError(400,'Request body required.');
@@ -197,7 +199,7 @@ export default {
   async fetch(request,env){
     const origin=request.headers.get('Origin');const allowed=(env.ALLOWED_ORIGINS||'').split(',').map(s=>s.trim());
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin'};
-    if(origin&&allowed.includes(origin))Object.assign(headers,{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'Authorization,Content-Type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'});
+    if(origin&&allowed.includes(origin))Object.assign(headers,{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'Authorization,Content-Type','Access-Control-Allow-Methods':'GET,POST,PATCH,OPTIONS'});
     try{
       const url=new URL(request.url);const path=url.pathname;
       if(path!=='/api/webhooks/razorpay')requireValue(!origin||allowed.includes(origin),'Origin not allowed.',403);
@@ -237,19 +239,34 @@ export default {
           requireValue(equalSignature(await hmac(env.RAZORPAY_KEY_SECRET,`${t.gateway_order_id}|${b.paymentId}`),b.signature),'Invalid payment signature.',400);
           result=await confirmPayment(db,env,t.gateway_order_id,b.paymentId);
         }else if(request.method==='GET'&&path==='/api/admin/summary'){
-          result=await rpc(db,'admin_dashboard_summary',{requested_days:30});
+          const days=Number(url.searchParams.get('days')||30);requireValue(Number.isInteger(days)&&days>=1&&days<=365,'Choose a reporting period from 1 to 365 days.');
+          result=await rpc(db,'admin_dashboard_summary',{requested_days:days});
         }else if(request.method==='GET'&&path==='/api/admin/records'){
-          const name=url.searchParams.get('type');requireValue(Object.hasOwn(REPORTS,name),'Invalid report.');
+          const name=url.searchParams.get('type');requireValue(Object.hasOwn(ADMIN_REPORTS,name),'Invalid report.');
           const offset=Number(url.searchParams.get('offset')||0);requireValue(Number.isInteger(offset)&&offset>=0&&offset<=1000000,'Invalid page.');
-          const spec=REPORTS[name];let filter='';
+          const spec=ADMIN_REPORTS[name];let filter='';
           if(name==='calendar'&&url.searchParams.has('date')){
             const date=url.searchParams.get('date');requireValue(/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(Date.parse(date)),'Invalid date.');
             const start=new Date(`${date}T00:00:00+05:30`);const end=new Date(+start+86400000);
-            filter=`&start_at=gte.${eq(start.toISOString())}&start_at=lt.${eq(end.toISOString())}`;
+            filter=`&appointment_start=gte.${eq(start.toISOString())}&appointment_start=lt.${eq(end.toISOString())}`;
           }
-          const rows=await db(`${spec.table}?select=${spec.select}&order=${spec.order}&limit=100&offset=${offset}${filter}`);
-          await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'view_records',target:name}});
-          result={rows,offset,hasMore:rows.length===100};
+          const rows=await db(`${spec.table}?select=${spec.select}&order=${adminOrders[name]||spec.order}&limit=101&offset=${offset}${filter}`);
+          await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'view_records',target:`${name}:${offset}`}});
+          result={rows:rows.slice(0,100),offset,hasMore:rows.length>100};
+        }else if(request.method==='PATCH'&&/^\/api\/admin\/consultations\/[0-9a-f-]{36}$/i.test(path)){
+          const id=path.split('/')[4];requireValue(uuid(id),'Invalid consultation.');const value=browserConsultationStatusInput(await jsonBody(request));
+          const [current]=await db(`browser_consultations?id=eq.${eq(id)}&select=id,status&limit=1`);requireValue(current,'Consultation not found.',404);
+          const transitions={requested:['contacted','cancelled'],contacted:['confirmed','cancelled'],confirmed:['completed','cancelled','no_show'],completed:[],cancelled:[],no_show:[]};
+          requireValue(value.status===current.status||transitions[current.status]?.includes(value.status),'This consultation status change is not allowed.',409);
+          const [row]=await db(`browser_consultations?id=eq.${eq(id)}`,{method:'PATCH',body:{status:value.status,updated_at:new Date().toISOString()}});
+          await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'consultation_status_updated',target:`${id}:${current.status}->${value.status}`}});result={row};
+        }else if(request.method==='PATCH'&&/^\/api\/admin\/orders\/[0-9a-f-]{36}$/i.test(path)){
+          const id=path.split('/')[4];requireValue(uuid(id),'Invalid order.');const value=orderFulfillmentInput(await jsonBody(request));
+          const [current]=await db(`product_orders?id=eq.${eq(id)}&select=id,status,payment_status,tracking_reference&limit=1`);requireValue(current,'Order not found.',404);
+          const transitions={awaiting_payment:current.payment_status==='paid'?[]:['cancelled'],confirmed:['processing'],processing:['dispatched'],dispatched:['delivered'],delivered:[],cancelled:[],returned:[]};
+          requireValue(value.status===current.status||transitions[current.status]?.includes(value.status),'This order status change is not allowed.',409);
+          const [row]=await db(`product_orders?id=eq.${eq(id)}`,{method:'PATCH',body:{status:value.status,tracking_reference:value.trackingReference||null,updated_at:new Date().toISOString()}});
+          await db('admin_audit_log',{method:'POST',body:{user_id:user.id,action:'order_fulfilment_updated',target:`${id}:${current.status}->${value.status}`}});result={row};
         }else if(request.method==='POST'&&path==='/api/admin/catalog'){
           const value=catalogInput(await jsonBody(request));
           const rows=await db('catalog_prices?on_conflict=kind,slug,variant',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:value});

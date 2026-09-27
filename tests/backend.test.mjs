@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
+import {publicAccountInput,publicAccountDeleteInput,publicConsultationInput,consultationInput,checkoutInput,consultationConfirmationInput,catalogInput,operatorRefundInput,browserConsultationStatusInput,orderFulfillmentInput,compatibilityPaidReport,analyticsInput,hmac,equalSignature,canonical} from '../backend/core.mjs';
 import {sheetRows,csvRows,SHEET_TITLES,overviewRows} from '../backend/sheets.mjs';
 import worker,{database} from '../backend/worker.mjs';
 
@@ -27,6 +27,8 @@ test('consultations cannot enter Razorpay checkout',()=>assert.throws(()=>checko
 test('WhatsApp consultation confirmation requires an integer direct payment and references',()=>{const value=consultationConfirmationInput({appointmentId:id,amount:110000,method:' UPI ',reference:' UTR-123 '});assert.equal(value.amount,110000);assert.equal(value.method,'UPI');assert.throws(()=>consultationConfirmationInput({appointmentId:id,amount:0,method:'UPI',reference:'UTR-123'}));});
 test('catalogue allows only product prices with integer paise and exact variants',()=>{assert.equal(catalogInput({kind:'product',slug:'clear-quartz-bracelet',variant:'M',name:'Clear Quartz Bracelet',unitAmount:110000,shippingAmount:0,active:true}).unit_amount,110000);assert.throws(()=>catalogInput({kind:'consultation',slug:'tarot',variant:'Single Question Reading',name:'Tarot',unitAmount:110000,shippingAmount:0,active:true}));assert.throws(()=>catalogInput({kind:'product',slug:'test',variant:'',name:'Test',unitAmount:1.5,shippingAmount:0,active:true}));});
 test('operator refunds require a transaction, integer paise and a clear reason',()=>{assert.equal(operatorRefundInput({transactionId:id,amount:5000,reason:'Duplicate payment'}).amount,5000);assert.throws(()=>operatorRefundInput({transactionId:id,amount:1.5,reason:'Duplicate payment'}));assert.throws(()=>operatorRefundInput({transactionId:id,amount:5000,reason:'bad'}));});
+test('management consultation status accepts only the approved workflow',()=>{assert.deepEqual(browserConsultationStatusInput({status:'contacted'}),{status:'contacted'});assert.throws(()=>browserConsultationStatusInput({status:'paid'}));});
+test('management order dispatch requires a concise tracking reference',()=>{assert.deepEqual(orderFulfillmentInput({status:'dispatched',trackingReference:'SHIP-123'}),{status:'dispatched',trackingReference:'SHIP-123'});assert.throws(()=>orderFulfillmentInput({status:'dispatched',trackingReference:''}));assert.throws(()=>orderFulfillmentInput({status:'processing',trackingReference:'x'.repeat(121)}));});
 test('canonical comparison ignores JSON property order recursively',()=>assert.equal(canonical({b:2,a:{z:1,y:2}}),canonical({a:{y:2,z:1},b:2})));
 test('HMAC SHA256 matches a known test vector',async()=>{const s=await hmac('key','The quick brown fox jumps over the lazy dog');assert.equal(s,'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8');assert.ok(equalSignature(s,s));assert.equal(equalSignature(s,'x'.repeat(64)),false);assert.equal(equalSignature(s,s.slice(1)),false);});
 test('analytics strips query strings and full referrer details',()=>{const e=analyticsInput({consent:true,event_name:'page_view',session_id:id,anonymous_id:id,path:'/index.html',referrer:'https://example.org/path?email=private@example.org',metadata:{email:'private'},device:'mobile'});assert.equal(e.referrer,'example.org');assert.equal(e.metadata.email,undefined);});
@@ -101,6 +103,54 @@ test('MFA-protected admin can confirm a WhatsApp consultation payment',async()=>
     else throw new Error('Unexpected URL '+url);
     return new Response(JSON.stringify(data),{status:200});};
   try{const response=await worker.fetch(new Request(`https://api.test/api/admin/consultations/${id}/confirm`,{method:'POST',headers:{Authorization:'Bearer '+token},body:JSON.stringify({amount:110000,method:'UPI',reference:'UTR-123'})}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',ADMIN_USER_IDS:id});assert.equal(response.status,200);assert.equal((await response.json()).status,'confirmed');assert.ok(calls.some(call=>call.url.includes('confirm_whatsapp_consultation')));}finally{globalThis.fetch=original;}
+});
+test('management summary uses the selected reporting period',async()=>{
+  const original=globalThis.fetch,calls=[];const token='header.'+Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url')+'.signature';
+  globalThis.fetch=async(url,options={})=>{calls.push({url:String(url),options});let data;
+    if(String(url).endsWith('/auth/v1/user'))data={id};
+    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
+    else if(String(url).includes('/rpc/admin_dashboard_summary')){assert.equal(JSON.parse(options.body).requested_days,90);data={business:{},analytics:{}};}
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});};
+  try{const response=await worker.fetch(new Request('https://api.test/api/admin/summary?days=90',{headers:{Authorization:'Bearer '+token}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',ADMIN_USER_IDS:id});assert.equal(response.status,200);assert.ok(calls.some(call=>call.url.includes('/rpc/admin_dashboard_summary')));}finally{globalThis.fetch=original;}
+});
+test('management calendar filters by appointment_start and writes an audit entry',async()=>{
+  const original=globalThis.fetch,calls=[];const token='header.'+Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url')+'.signature';
+  globalThis.fetch=async(url,options={})=>{calls.push({url:String(url),options});let data;
+    if(String(url).endsWith('/auth/v1/user'))data={id};
+    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
+    else if(String(url).includes('/browser_consultations?'))data=[];
+    else if(String(url).endsWith('/admin_audit_log'))data=[{}];
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});};
+  try{const response=await worker.fetch(new Request('https://api.test/api/admin/records?type=calendar&date=2026-09-27',{headers:{Authorization:'Bearer '+token}}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',ADMIN_USER_IDS:id});assert.equal(response.status,200);const report=calls.find(call=>call.url.includes('/browser_consultations?'));assert.match(report.url,/appointment_start=gte\./);assert.doesNotMatch(report.url,/[?&]start_at=/);}finally{globalThis.fetch=original;}
+});
+test('management consultation workflow updates status and records the action',async()=>{
+  const original=globalThis.fetch,calls=[];const token='header.'+Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url')+'.signature';
+  globalThis.fetch=async(url,options={})=>{calls.push({url:String(url),options});let data;
+    if(String(url).endsWith('/auth/v1/user'))data={id};
+    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
+    else if(String(url).includes('/browser_consultations?'))data=options.method==='PATCH'?[{id,status:'contacted'}]:[{id,status:'requested'}];
+    else if(String(url).endsWith('/admin_audit_log'))data=[{}];
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});};
+  try{const response=await worker.fetch(new Request(`https://api.test/api/admin/consultations/${id}`,{method:'PATCH',headers:{Authorization:'Bearer '+token,Origin:'https://siaos.in'},body:JSON.stringify({status:'contacted'})}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',ADMIN_USER_IDS:id,ALLOWED_ORIGINS:'https://siaos.in'});assert.equal(response.status,200);assert.match(response.headers.get('access-control-allow-methods'),/PATCH/);assert.equal((await response.json()).row.status,'contacted');assert.ok(calls.some(call=>call.url.endsWith('/admin_audit_log')));}finally{globalThis.fetch=original;}
+});
+test('management order workflow dispatches with tracking and records the action',async()=>{
+  const original=globalThis.fetch,calls=[];const token='header.'+Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url')+'.signature';
+  globalThis.fetch=async(url,options={})=>{calls.push({url:String(url),options});let data;
+    if(String(url).endsWith('/auth/v1/user'))data={id};
+    else if(String(url).includes('/rpc/api_rate_limit'))data=true;
+    else if(String(url).includes('/product_orders?'))data=options.method==='PATCH'?[{id,status:'dispatched',tracking_reference:'SHIP-123'}]:[{id,status:'processing',payment_status:'paid',tracking_reference:null}];
+    else if(String(url).endsWith('/admin_audit_log'))data=[{}];
+    else throw new Error('Unexpected URL '+url);
+    return new Response(JSON.stringify(data),{status:200});};
+  try{const response=await worker.fetch(new Request(`https://api.test/api/admin/orders/${id}`,{method:'PATCH',headers:{Authorization:'Bearer '+token},body:JSON.stringify({status:'dispatched',trackingReference:'SHIP-123'})}),{SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'secret',ADMIN_USER_IDS:id});assert.equal(response.status,200);assert.equal((await response.json()).row.tracking_reference,'SHIP-123');const update=calls.find(call=>call.url.includes('/product_orders?')&&call.options.method==='PATCH');assert.equal(JSON.parse(update.options.body).tracking_reference,'SHIP-123');}finally{globalThis.fetch=original;}
+});
+test('management dashboard exposes analytics, operational records and workflow actions safely',async()=>{
+  const [html,script]=await Promise.all(['admin.html','admin.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
+  for(const type of ['deleted_accounts','consultations','orders','payments','refunds','audits'])assert.match(html,new RegExp(`value="${type}"`));
+  assert.match(html,/Reporting period/);assert.match(script,/topPages/);assert.match(script,/'admin\/consultations\/'\+row\.id/);assert.match(script,/'admin\/orders\/'\+row\.id/);assert.doesNotMatch(script,/\.innerHTML\s*=/);
 });
 test('checkout uses database price, not browser amount, and creates a ledger',async()=>{
   const original=globalThis.fetch,calls=[];
